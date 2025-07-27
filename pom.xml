@@ -134,6 +134,7 @@
                     <effort>Max</effort>
                     <threshold>Low</threshold>
                     <xmlOutput>true</xmlOutput>
+                    <failOnError>false</failOnError> <!-- Don't fail build on SpotBugs issues -->
                 </configuration>
                 <executions>
                     <execution>

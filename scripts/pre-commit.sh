@@ -65,9 +65,9 @@ echo "🐛 Running bug detection..."
 if mvn spotbugs:check -q; then
     print_status "No bugs detected"
 else
-    print_warning "Potential bugs found"
-    print_warning "Run 'mvn spotbugs:check' to see details"
-    # Don't fail the commit for SpotBugs warnings
+    print_warning "Potential bugs found (build continues)"
+    print_info "Run 'mvn spotbugs:check' to see details"
+    print_info "SpotBugs issues are warnings and don't fail the build"
 fi
 
 # 5. Check for TODO/FIXME comments
