@@ -1,8 +1,9 @@
 package com.vividcodes.graphrag.model.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import jakarta.validation.constraints.NotBlank;
 
 public class IngestionRequest {
     
@@ -64,11 +65,11 @@ public class IngestionRequest {
         }
         
         public List<String> getFilePatterns() {
-            return filePatterns;
+            return filePatterns != null ? Collections.unmodifiableList(filePatterns) : Collections.emptyList();
         }
         
         public void setFilePatterns(List<String> filePatterns) {
-            this.filePatterns = filePatterns;
+            this.filePatterns = filePatterns != null ? new ArrayList<>(filePatterns) : new ArrayList<>();
         }
     }
 } 

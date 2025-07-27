@@ -1,11 +1,12 @@
 package com.vividcodes.graphrag.model.graph;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Property;
-import org.springframework.data.neo4j.core.schema.Id;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Node("Field")
 public class FieldNode {
@@ -87,11 +88,11 @@ public class FieldNode {
     }
     
     public List<String> getModifiers() {
-        return modifiers;
+        return modifiers != null ? Collections.unmodifiableList(modifiers) : Collections.emptyList();
     }
     
     public void setModifiers(List<String> modifiers) {
-        this.modifiers = modifiers;
+        this.modifiers = modifiers != null ? new ArrayList<>(modifiers) : new ArrayList<>();
     }
     
     public String getType() {

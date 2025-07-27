@@ -1,5 +1,7 @@
 package com.vividcodes.graphrag.model.dto;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class CodeContext {
@@ -78,10 +80,10 @@ public class CodeContext {
     }
     
     public List<String> getRelatedNodes() {
-        return relatedNodes;
+        return relatedNodes != null ? Collections.unmodifiableList(relatedNodes) : Collections.emptyList();
     }
     
     public void setRelatedNodes(List<String> relatedNodes) {
-        this.relatedNodes = relatedNodes;
+        this.relatedNodes = relatedNodes != null ? new ArrayList<>(relatedNodes) : new ArrayList<>();
     }
 } 

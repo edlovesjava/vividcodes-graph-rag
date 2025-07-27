@@ -1,5 +1,17 @@
 package com.vividcodes.graphrag.service;
 
+import java.io.FileNotFoundException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
@@ -9,20 +21,9 @@ import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.vividcodes.graphrag.config.ParserConfig;
-import com.vividcodes.graphrag.model.graph.*;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import com.vividcodes.graphrag.model.graph.ClassNode;
+import com.vividcodes.graphrag.model.graph.FieldNode;
+import com.vividcodes.graphrag.model.graph.MethodNode;
 
 @Service
 public class JavaParserService {
@@ -76,7 +77,12 @@ public class JavaParserService {
         }
     }
     
-    private boolean shouldIncludeFile(Path filePath) {
+    boolean shouldIncludeFile(Path filePath) {
+        if (filePath == null || filePath.getFileName() == null) {
+            logger.debug("Skipping null or invalid file path: {}", filePath);
+            return false;
+        }
+        
         String fileName = filePath.getFileName().toString();
         String filePathStr = filePath.toString();
         
