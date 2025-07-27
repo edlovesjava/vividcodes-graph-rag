@@ -1,0 +1,10 @@
+# Ignore all files in the target directory
+target/
+
+# Ignore all files in the .idea directory
+.idea/
+
+# Ignore all files in the .vscode directory
+.vscode/
+
+s

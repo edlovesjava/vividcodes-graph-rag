@@ -1,0 +1,48 @@
+spring:
+  application:
+    name: graph-rag
+  
+  neo4j:
+    uri: bolt://localhost:7687
+    authentication:
+      username: neo4j
+      password: password
+  
+  data:
+    neo4j:
+      database: neo4j
+      connection-timeout: 30s
+      connection-pool:
+        max-connection-lifetime: 1h
+        max-connection-pool-size: 100
+
+server:
+  port: 8080
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    com.vividcodes.graphrag: DEBUG
+    org.neo4j: INFO
+    org.springframework.data.neo4j: DEBUG
+
+parser:
+  include-private: false
+  include-tests: false
+  max-file-size: 10485760  # 10MB
+  supported-extensions: java
+
+graph:
+  batch-size: 1000
+  indexes:
+    enabled: true
+  cache:
+    enabled: true 
