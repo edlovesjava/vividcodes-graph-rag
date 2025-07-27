@@ -1,11 +1,12 @@
 package com.vividcodes.graphrag.model.graph;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import org.springframework.data.neo4j.core.schema.Id;
 import org.springframework.data.neo4j.core.schema.Node;
 import org.springframework.data.neo4j.core.schema.Property;
-import org.springframework.data.neo4j.core.schema.Id;
-
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Node("Method")
 public class MethodNode {
@@ -96,11 +97,11 @@ public class MethodNode {
     }
     
     public List<String> getModifiers() {
-        return modifiers;
+        return modifiers != null ? Collections.unmodifiableList(modifiers) : Collections.emptyList();
     }
     
     public void setModifiers(List<String> modifiers) {
-        this.modifiers = modifiers;
+        this.modifiers = modifiers != null ? new ArrayList<>(modifiers) : new ArrayList<>();
     }
     
     public String getReturnType() {
@@ -112,19 +113,19 @@ public class MethodNode {
     }
     
     public List<String> getParameters() {
-        return parameters;
+        return parameters != null ? Collections.unmodifiableList(parameters) : Collections.emptyList();
     }
     
     public void setParameters(List<String> parameters) {
-        this.parameters = parameters;
+        this.parameters = parameters != null ? new ArrayList<>(parameters) : new ArrayList<>();
     }
     
     public List<String> getParameterNames() {
-        return parameterNames;
+        return parameterNames != null ? Collections.unmodifiableList(parameterNames) : Collections.emptyList();
     }
     
     public void setParameterNames(List<String> parameterNames) {
-        this.parameterNames = parameterNames;
+        this.parameterNames = parameterNames != null ? new ArrayList<>(parameterNames) : new ArrayList<>();
     }
     
     public String getFilePath() {

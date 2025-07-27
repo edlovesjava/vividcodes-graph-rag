@@ -1,6 +1,6 @@
 # Documentation Index
 
-Welcome to the Java Graph RAG system documentation. This directory contains comprehensive documentation for all aspects of the system.
+Welcome to the Java Graph RAG system documentation. This directory contains comprehensive technical documentation for all aspects of the system.
 
 ## 📚 Documentation Overview
 
@@ -11,7 +11,6 @@ Welcome to the Java Graph RAG system documentation. This directory contains comp
 - **[API Documentation](API_DOCUMENTATION.md)** - Complete REST API reference
 - **[Deployment](DEPLOYMENT.md)** - Deployment guides for all environments
 - **[Conventional Commits](CONVENTIONAL_COMMITS.md)** - Commit message standards and guidelines
-- **[SpotBugs Fixes Story](SPOTBUGS_FIXES_STORY.md)** - Comprehensive plan for addressing code quality and security issues
 
 ## 🚀 Quick Start
 
@@ -29,11 +28,12 @@ docs/
 ├── ARCHITECTURE.md          # System architecture and design
 ├── API_DOCUMENTATION.md     # REST API reference
 ├── DEPLOYMENT.md            # Deployment guides
-├── CONVENTIONAL_COMMITS.md  # Commit message standards
-└── SPOTBUGS_FIXES_STORY.md  # SpotBugs issues resolution plan
+└── CONVENTIONAL_COMMITS.md  # Commit message standards
 ```
 
 ## 🎯 Documentation Purpose
+
+This directory contains **technical documentation** for the Java Graph RAG system:
 
 ### For Developers
 
@@ -52,6 +52,15 @@ docs/
 - **Phase 1 Summary**: Current project status and capabilities
 - **Architecture**: System complexity and maintenance considerations
 - **Deployment**: Resource requirements and deployment complexity
+
+## 📋 Product Requirements & Stories
+
+For product requirements, user stories, and development specifications, see the **[prd/](../prd/)** directory:
+
+- **Product Requirements Documents (PRDs)**
+- **User Stories and Development Tasks**
+- **Technical Specifications**
+- **Project Setup and Planning Documents**
 
 ## 🔄 Documentation Updates
 
