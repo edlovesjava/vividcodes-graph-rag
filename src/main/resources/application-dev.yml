@@ -1,0 +1,16 @@
+spring:
+  profiles: dev
+  neo4j:
+    uri: bolt://localhost:7687
+    authentication:
+      username: neo4j
+      password: password
+
+logging:
+  level:
+    com.vividcodes.graphrag: DEBUG
+    org.neo4j: INFO
+    org.springframework: INFO
+
+server:
+  port: 8080

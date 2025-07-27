@@ -1,0 +1,408 @@
+# Cursor Guidelines for Java Graph RAG Project
+
+## Project Overview
+This is a Java Graph RAG (Retrieval-Augmented Generation) system that parses Java source code into a Neo4j graph database for intelligent code analysis and retrieval. The system uses Spring Boot, JavaParser, and Neo4j.
+
+## Code Style and Standards
+
+### Java Code Style
+- Follow Java naming conventions: camelCase for variables/methods, PascalCase for classes
+- Use meaningful variable and method names that describe their purpose
+- Keep methods under 50 lines when possible
+- Use proper indentation (4 spaces, not tabs)
+- Add comprehensive JavaDoc comments for public methods and classes
+- Use `@Override` annotation when overriding methods
+- Prefer composition over inheritance
+- Use final fields where possible for immutability
+
+### Spring Boot Conventions
+- Use `@RestController` for REST endpoints
+- Use `@Service` for business logic classes
+- Use `@Repository` for data access classes
+- Use `@Configuration` for configuration classes
+- Use `@Autowired` constructor injection (not field injection)
+- Use `@Value` for externalized configuration
+- Use `@Valid` for request validation
+
+### Neo4j and Graph Database
+- Use descriptive node labels (e.g., `:Class`, `:Method`, `:Package`)
+- Use meaningful relationship types (e.g., `[:CONTAINS]`, `[:CALLS]`, `[:EXTENDS]`)
+- Include metadata properties on nodes (file_path, line_numbers, timestamps)
+- Use parameterized Cypher queries to prevent injection
+- Add indexes for frequently queried properties
+
+## Architecture Guidelines
+
+### Layered Architecture
+- **Controllers**: Handle HTTP requests/responses, validation, error handling
+- **Services**: Business logic, orchestration, data transformation
+- **Repositories**: Data access, graph operations
+- **Models**: Domain entities, DTOs, configuration classes
+- **Configuration**: Application setup, beans, external configuration
+
+### Package Structure
+```
+com.vividcodes.graphrag/
+├── controller/     # REST controllers
+├── service/        # Business logic services
+├── repository/     # Data access layer
+├── model/          # Domain models and DTOs
+│   ├── graph/      # Graph node models
+│   └── dto/        # Data transfer objects
+├── config/         # Configuration classes
+└── util/           # Utility classes
+```
+
+## Testing Guidelines
+
+### Unit Testing
+- Use JUnit 5 for all tests
+- Use Mockito for mocking dependencies
+- Test both positive and negative scenarios
+- Use descriptive test method names
+- Use `@TempDir` for temporary file operations
+- Aim for >80% code coverage
+- Test edge cases and error conditions
+
+### Integration Testing
+- Test end-to-end workflows
+- Use test containers for Neo4j when needed
+- Test API endpoints with real HTTP requests
+- Verify graph database state after operations
+
+### Test Naming Convention
+```java
+@Test
+void shouldParseJavaClass_WhenValidSourceCodeProvided() {
+    // test implementation
+}
+
+@Test
+void shouldThrowException_WhenInvalidFilePathProvided() {
+    // test implementation
+}
+```
+
+## Error Handling
+
+### Exception Handling
+- Use specific exception types (not generic Exception)
+- Create custom exceptions for business logic errors
+- Use `@ControllerAdvice` for global exception handling
+- Return appropriate HTTP status codes
+- Include meaningful error messages
+- Log exceptions with appropriate levels
+
+### Validation
+- Use Bean Validation annotations (`@NotNull`, `@Size`, etc.)
+- Validate input parameters in controllers
+- Validate business rules in services
+- Return validation errors with field names
+
+## Logging Guidelines
+
+### Log Levels
+- **ERROR**: System errors, exceptions, failed operations
+- **WARN**: Unexpected but recoverable situations
+- **INFO**: Important business events, successful operations
+- **DEBUG**: Detailed information for debugging
+- **TRACE**: Very detailed information
+
+### Logging Best Practices
+- Use structured logging with key-value pairs
+- Include correlation IDs for request tracing
+- Log method entry/exit for complex operations
+- Use appropriate log levels for different environments
+- Include relevant context in log messages
+
+```java
+logger.info("Processing Java file: {} with {} classes", filePath, classCount);
+logger.debug("Parsing class: {} at lines {}-{}", className, startLine, endLine);
+logger.error("Failed to parse file: {}", filePath, exception);
+```
+
+## Configuration Guidelines
+
+### Application Properties
+- Use YAML format for configuration
+- Group related properties logically
+- Use environment-specific profiles
+- Externalize sensitive information
+- Provide sensible defaults
+- Document configuration options
+
+### Environment Variables
+- Use uppercase with underscores for environment variables
+- Prefix with application name when needed
+- Use secure methods for sensitive data
+- Validate required environment variables at startup
+
+## Performance Guidelines
+
+### Java Performance
+- Use appropriate data structures
+- Avoid unnecessary object creation
+- Use StringBuilder for string concatenation in loops
+- Consider memory usage for large datasets
+- Use batch operations for database operations
+
+### Neo4j Performance
+- Use parameterized queries
+- Create indexes for frequently queried properties
+- Use appropriate relationship directions
+- Consider query complexity and execution plans
+- Use batch operations for bulk inserts
+
+## Security Guidelines
+
+### Input Validation
+- Validate all user inputs
+- Sanitize file paths to prevent directory traversal
+- Use parameterized queries to prevent injection
+- Validate file types and sizes
+- Implement rate limiting for API endpoints
+
+### Authentication and Authorization
+- Use secure authentication for Neo4j
+- Implement API authentication when needed
+- Use HTTPS in production
+- Secure sensitive configuration
+- Implement proper access controls
+
+## Documentation Guidelines
+
+### Code Documentation
+- Write clear JavaDoc for public APIs
+- Include examples in documentation
+- Document complex business logic
+- Keep documentation up to date
+- Use meaningful commit messages
+
+### API Documentation
+- Use OpenAPI/Swagger annotations
+- Document all endpoints and parameters
+- Include request/response examples
+- Document error responses
+- Keep API documentation current
+
+## Git and Version Control
+
+### Commit Messages
+- Use conventional commit format
+- Write descriptive commit messages
+- Reference issues when applicable
+- Keep commits focused and atomic
+- Use present tense ("Add feature" not "Added feature")
+
+### Branch Strategy
+- Use feature branches for new development
+- Use descriptive branch names
+- Keep branches short-lived
+- Review code before merging
+- Use pull requests for collaboration
+
+## Code Review Guidelines
+
+### Review Checklist
+- [ ] Code follows style guidelines
+- [ ] Tests are included and pass
+- [ ] Error handling is appropriate
+- [ ] Logging is adequate
+- [ ] Documentation is updated
+- [ ] Performance considerations addressed
+- [ ] Security considerations addressed
+- [ ] No hardcoded values
+- [ ] Proper exception handling
+
+## Common Patterns
+
+### Service Layer Pattern
+```java
+@Service
+public class JavaParserService {
+    private final GraphService graphService;
+    private final ParserConfig config;
+    
+    @Autowired
+    public JavaParserService(GraphService graphService, ParserConfig config) {
+        this.graphService = graphService;
+        this.config = config;
+    }
+    
+    public void parseDirectory(String sourcePath) {
+        // Implementation
+    }
+}
+```
+
+### Controller Pattern
+```java
+@RestController
+@RequestMapping("/api/v1")
+public class IngestionController {
+    private final JavaParserService parserService;
+    
+    @PostMapping("/ingest")
+    public ResponseEntity<Map<String, Object>> ingestCode(
+            @Valid @RequestBody IngestionRequest request) {
+        // Implementation
+    }
+}
+```
+
+### Graph Model Pattern
+```java
+@Node("Class")
+public class ClassNode {
+    @Id
+    private String id;
+    
+    @Property("name")
+    private String name;
+    
+    @Property("visibility")
+    private String visibility;
+    
+    // Constructor, getters, setters
+}
+```
+
+## Anti-Patterns to Avoid
+
+### Code Anti-Patterns
+- Don't use field injection (`@Autowired` on fields)
+- Don't catch and swallow exceptions
+- Don't use raw types (use generics)
+- Don't ignore compiler warnings
+- Don't use magic numbers (use constants)
+- Don't create circular dependencies
+
+### Graph Database Anti-Patterns
+- Don't create overly complex relationships
+- Don't store large text in node properties
+- Don't use generic node labels
+- Don't ignore query performance
+- Don't create deep relationship chains
+
+### Workflow Anti-Patterns
+- **Don't implement without approval**: Always propose plans for non-trivial changes
+- **Don't fix code immediately**: Ask for approval before fixing code that was just written
+- **Don't make assumptions**: Clarify requirements and approach before implementation
+- **Don't skip planning**: Even small changes benefit from clear planning
+- **Don't proceed without confirmation**: Wait for explicit approval before major changes
+
+## Development Workflow
+
+### Before Starting
+1. Read and understand the requirements
+2. Check existing code for similar patterns
+3. **PROPOSE A PLAN** and ask for approval before non-trivial changes
+4. Consider testing strategy
+
+### During Development
+1. **ALWAYS propose a plan first** for any non-trivial code changes
+2. **Ask for approval** before implementing fixes to code that was just written
+3. Write tests first (TDD when possible)
+4. Follow the established patterns
+5. Add appropriate logging
+6. Handle errors gracefully
+7. Document complex logic
+
+### Before Committing
+1. Run all tests
+2. Check code style
+3. Review for security issues
+4. Update documentation
+5. Write clear commit message
+
+### Planning Guidelines
+- **For new features**: Propose architecture, approach, and implementation steps
+- **For bug fixes**: Explain the issue, proposed solution, and testing approach
+- **For refactoring**: Detail what will change and why
+- **For configuration changes**: Explain the impact and reasoning
+- **For documentation updates**: Outline the structure and content
+
+### Approval Process
+- Present the plan clearly and concisely
+- Wait for explicit approval before proceeding
+- If changes are requested, revise the plan and ask again
+- Only proceed with implementation after approval
+
+### What Requires Approval
+**Always propose a plan for:**
+- New features or functionality
+- Major refactoring or architectural changes
+- Database schema modifications
+- API changes or new endpoints
+- Configuration changes affecting multiple components
+- New dependencies or framework updates
+- Documentation restructuring
+- Test strategy changes
+- Performance optimizations
+- Security-related changes
+
+**May not require approval for:**
+- Minor bug fixes (single line changes)
+- Typo corrections
+- Formatting fixes
+- Adding comments to existing code
+- Updating version numbers in documentation
+
+**When in doubt, ask for approval.**
+
+## Environment-Specific Guidelines
+
+### Development
+- Use detailed logging
+- Enable debug mode
+- Use local Neo4j instance
+- Fast feedback loops
+- Frequent commits
+
+### Production
+- Use appropriate log levels
+- Optimize performance
+- Secure configuration
+- Monitor and alert
+- Backup strategies
+
+## Troubleshooting Guidelines
+
+### Common Issues
+- Neo4j connection problems: Check authentication and network
+- Parsing errors: Validate Java syntax and file encoding
+- Memory issues: Monitor heap usage and optimize queries
+- Performance issues: Profile queries and add indexes
+
+### Debugging Tips
+- Use debug logging for complex operations
+- Check Neo4j browser for graph state
+- Use application health endpoints
+- Monitor application metrics
+- Check system resources
+
+## Future Considerations
+
+### Scalability
+- Consider horizontal scaling for high load
+- Optimize database queries for large datasets
+- Use caching for frequently accessed data
+- Implement batch processing for bulk operations
+
+### Maintainability
+- Keep code modular and testable
+- Use dependency injection for flexibility
+- Follow SOLID principles
+- Regular code reviews and refactoring
+- Keep dependencies updated
+
+### Monitoring
+- Implement health checks
+- Add performance metrics
+- Monitor error rates
+- Track usage patterns
+- Set up alerting
+
+---
+
+Remember: These guidelines are living documents. Update them as the project evolves and new patterns emerge. 

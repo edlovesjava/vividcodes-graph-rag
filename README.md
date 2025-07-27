@@ -31,7 +31,17 @@ Java Source Code → Parser → Graph Nodes/Edges → Neo4j → Query Engine →
 
 ## Quick Start
 
-### 1. Start Neo4j Database
+### Automated Setup (Recommended)
+
+```bash
+git clone <repository-url>
+cd vividcodes-graph-rag
+./scripts/setup-dev.sh
+```
+
+### Manual Setup
+
+#### 1. Start Neo4j Database
 
 ```bash
 docker-compose up neo4j -d
@@ -39,7 +49,7 @@ docker-compose up neo4j -d
 
 Wait for Neo4j to be ready (check http://localhost:7474)
 
-### 2. Build and Run Application
+#### 2. Build and Run Application
 
 ```bash
 mvn clean install
@@ -51,11 +61,13 @@ The application will start on http://localhost:8080
 ### 3. Test the System
 
 #### Health Check
+
 ```bash
 curl http://localhost:8080/api/v1/health
 ```
 
 #### Ingest Java Code
+
 ```bash
 curl -X POST http://localhost:8080/api/v1/ingest \
   -H "Content-Type: application/json" \
@@ -87,9 +99,11 @@ MATCH (c1:Class)-[r]->(c2:Class) RETURN c1, r, c2 LIMIT 10
 ## API Endpoints
 
 ### POST /api/v1/ingest
+
 Ingest Java source code into the graph database.
 
 **Request Body:**
+
 ```json
 {
   "sourcePath": "/path/to/java/project",
@@ -102,6 +116,7 @@ Ingest Java source code into the graph database.
 ```
 
 ### GET /api/v1/health
+
 Check application health status.
 
 ## Configuration
@@ -119,7 +134,7 @@ spring:
 parser:
   include-private: false
   include-tests: false
-  max-file-size: 10485760  # 10MB
+  max-file-size: 10485760 # 10MB
 
 graph:
   batch-size: 1000
@@ -185,6 +200,7 @@ docker-compose up -d
 ## Phase 1 Implementation Status
 
 ✅ **Completed:**
+
 - Spring Boot application setup
 - Neo4j integration
 - Java parser service with JavaParser
@@ -194,11 +210,13 @@ docker-compose up -d
 - Unit tests
 
 🔄 **In Progress:**
+
 - Relationship detection between code elements
 - Enhanced visibility and modifier parsing
 - Graph query engine
 
 📋 **Next Steps (Phase 2):**
+
 - Natural language to Cypher query conversion
 - LLM integration for prompt processing
 - Code context retrieval service
@@ -215,6 +233,41 @@ docker-compose up -d
 ## License
 
 This project is licensed under the MIT License.
+
+## Attribution
+
+This project was coded with assistance of Cursor with Claude Sonnet model.
+
+## Development Guidelines
+
+### Cursor Guidelines
+
+- **[.cursorrules](.cursorrules)** - Comprehensive Cursor guidelines for this project
+- **[.editorconfig](.editorconfig)** - Editor configuration for consistent formatting
+- **[checkstyle.xml](checkstyle.xml)** - Java code style rules
+
+### Commit Standards
+
+- **[docs/CONVENTIONAL_COMMITS.md](docs/CONVENTIONAL_COMMITS.md)** - Conventional commit message standards
+- **Commit Validation**: Git hooks automatically validate commit message format
+- **Types**: feat, fix, docs, style, refactor, perf, test, chore, ci, build, revert
+- **Scopes**: parser, graph, api, config, test, docs, deps
+
+### Development Scripts
+
+- **[scripts/](scripts/)** - Development and quality assurance scripts
+  - **[setup-dev.sh](scripts/setup-dev.sh)** - Complete development environment setup
+  - **[pre-commit.sh](scripts/pre-commit.sh)** - Pre-commit quality checks
+  - **[validate-commit-msg.sh](scripts/validate-commit-msg.sh)** - Commit message validation
+
+## Documentation
+
+For detailed documentation, see the [docs/](docs/) directory:
+
+- **[Phase 1 Summary](docs/PHASE1_SUMMARY.md)** - Complete overview of Phase 1 implementation
+- **[Architecture](docs/ARCHITECTURE.md)** - System architecture and design
+- **[API Documentation](docs/API_DOCUMENTATION.md)** - REST API reference
+- **[Deployment](docs/DEPLOYMENT.md)** - Deployment guides
 
 ## Support
 
