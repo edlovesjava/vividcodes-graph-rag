@@ -11,6 +11,7 @@ Welcome to the Java Graph RAG system documentation. This directory contains comp
 - **[API Documentation](API_DOCUMENTATION.md)** - Complete REST API reference
 - **[Deployment](DEPLOYMENT.md)** - Deployment guides for all environments
 - **[Conventional Commits](CONVENTIONAL_COMMITS.md)** - Commit message standards and guidelines
+- **[SpotBugs Fixes Story](SPOTBUGS_FIXES_STORY.md)** - Comprehensive plan for addressing code quality and security issues
 
 ## 🚀 Quick Start
 
@@ -28,7 +29,8 @@ docs/
 ├── ARCHITECTURE.md          # System architecture and design
 ├── API_DOCUMENTATION.md     # REST API reference
 ├── DEPLOYMENT.md            # Deployment guides
-└── CONVENTIONAL_COMMITS.md  # Commit message standards
+├── CONVENTIONAL_COMMITS.md  # Commit message standards
+└── SPOTBUGS_FIXES_STORY.md  # SpotBugs issues resolution plan
 ```
 
 ## 🎯 Documentation Purpose
