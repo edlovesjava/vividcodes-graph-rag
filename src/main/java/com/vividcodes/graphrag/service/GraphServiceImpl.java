@@ -1,6 +1,6 @@
 package com.vividcodes.graphrag.service;
 
-import com.vividcodes.graphrag.model.graph.*;
+import java.util.Map;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.Session;
 import org.neo4j.driver.Values;
@@ -8,18 +8,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
+import com.vividcodes.graphrag.model.graph.ClassNode;
+import com.vividcodes.graphrag.model.graph.FieldNode;
+import com.vividcodes.graphrag.model.graph.MethodNode;
+import com.vividcodes.graphrag.model.graph.PackageNode;
 
 @Service
 public class GraphServiceImpl implements GraphService {
     
-    private static final Logger logger = LoggerFactory.getLogger(GraphServiceImpl.class);
-    
+    private static final Logger LOGGER = LoggerFactory.getLogger(GraphServiceImpl.class);
+
     private final Driver neo4jDriver;
-    
+
     @Autowired
-    public GraphServiceImpl(Driver neo4jDriver) {
+    public GraphServiceImpl(final Driver neo4jDriver) {
         this.neo4jDriver = neo4jDriver;
     }
     
@@ -48,9 +50,9 @@ public class GraphServiceImpl implements GraphService {
                 "updatedAt", packageNode.getUpdatedAt()
             ));
             
-            logger.debug("Saved package: {}", packageNode.getName());
+            LOGGER.debug("Saved package: {}", packageNode.getName());
         } catch (Exception e) {
-            logger.error("Error saving package: {}", packageNode.getName(), e);
+            LOGGER.error("Error saving package: {}", packageNode.getName(), e);
             throw new RuntimeException("Failed to save package", e);
         }
     }
@@ -90,9 +92,9 @@ public class GraphServiceImpl implements GraphService {
                 "updatedAt", classNode.getUpdatedAt()
             ));
             
-            logger.info("Saved class: {} with ID: {}", classNode.getName(), classNode.getId());
+            LOGGER.info("Saved class: {} with ID: {}", classNode.getName(), classNode.getId());
         } catch (Exception e) {
-            logger.error("Error saving class: {}", classNode.getName(), e);
+            LOGGER.error("Error saving class: {}", classNode.getName(), e);
             throw new RuntimeException("Failed to save class", e);
         }
     }
@@ -134,9 +136,9 @@ public class GraphServiceImpl implements GraphService {
                 "updatedAt", methodNode.getUpdatedAt()
             ));
             
-            logger.debug("Saved method: {}", methodNode.getName());
+            LOGGER.debug("Saved method: {}", methodNode.getName());
         } catch (Exception e) {
-            logger.error("Error saving method: {}", methodNode.getName(), e);
+            LOGGER.error("Error saving method: {}", methodNode.getName(), e);
             throw new RuntimeException("Failed to save method", e);
         }
     }
@@ -172,9 +174,9 @@ public class GraphServiceImpl implements GraphService {
                 "updatedAt", fieldNode.getUpdatedAt()
             ));
             
-            logger.debug("Saved field: {}", fieldNode.getName());
+            LOGGER.debug("Saved field: {}", fieldNode.getName());
         } catch (Exception e) {
-            logger.error("Error saving field: {}", fieldNode.getName(), e);
+            LOGGER.error("Error saving field: {}", fieldNode.getName(), e);
             throw new RuntimeException("Failed to save field", e);
         }
     }
@@ -188,8 +190,7 @@ public class GraphServiceImpl implements GraphService {
     public void createRelationship(String fromId, String toId, String relationshipType, Map<String, Object> properties) {
         try (Session session = neo4jDriver.session()) {
             String cypher = """
-                MATCH (from), (to)
-                WHERE from.id = $fromId AND to.id = $toId
+                MATCH (from {id: $fromId}), (to {id: $toId})
                 MERGE (from)-[r:%s]->(to)
                 """.formatted(relationshipType);
             
@@ -207,9 +208,9 @@ public class GraphServiceImpl implements GraphService {
                 ));
             }
             
-            logger.debug("Created relationship: {} -> {} -> {}", fromId, relationshipType, toId);
+            LOGGER.debug("Created relationship: {} -> {} -> {}", fromId, relationshipType, toId);
         } catch (Exception e) {
-            logger.error("Error creating relationship: {} -> {} -> {}", fromId, relationshipType, toId, e);
+            LOGGER.error("Error creating relationship: {} -> {} -> {}", fromId, relationshipType, toId, e);
             throw new RuntimeException("Failed to create relationship", e);
         }
     }
