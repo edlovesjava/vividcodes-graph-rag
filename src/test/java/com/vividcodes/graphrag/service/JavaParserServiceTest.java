@@ -9,23 +9,20 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 import com.vividcodes.graphrag.config.ParserConfig;
 
-@ExtendWith(MockitoExtension.class)
 class JavaParserServiceTest {
     
-    @Mock
     private GraphService graphService;
-    
     private ParserConfig parserConfig;
     private JavaParserService javaParserService;
     
     @BeforeEach
     void setUp() {
+        // Use a simple mock implementation instead of Mockito
+        graphService = new SimpleMockGraphService();
+        
         parserConfig = new ParserConfig();
         ReflectionTestUtils.setField(parserConfig, "includePrivate", false);
         ReflectionTestUtils.setField(parserConfig, "includeTests", false);
@@ -80,5 +77,43 @@ class JavaParserServiceTest {
         assertDoesNotThrow(() -> {
             javaParserService.shouldIncludeFile(testPath);
         });
+    }
+    
+    /**
+     * Simple mock implementation of GraphService for testing.
+     * This avoids the Mockito ByteBuddy issues with Java 17.
+     */
+    private static class SimpleMockGraphService implements GraphService {
+        
+        @Override
+        public void savePackage(com.vividcodes.graphrag.model.graph.PackageNode packageNode) {
+            // Mock implementation - do nothing
+        }
+        
+        @Override
+        public void saveClass(com.vividcodes.graphrag.model.graph.ClassNode classNode) {
+            // Mock implementation - do nothing
+        }
+        
+        @Override
+        public void saveMethod(com.vividcodes.graphrag.model.graph.MethodNode methodNode) {
+            // Mock implementation - do nothing
+        }
+        
+        @Override
+        public void saveField(com.vividcodes.graphrag.model.graph.FieldNode fieldNode) {
+            // Mock implementation - do nothing
+        }
+        
+        @Override
+        public void createRelationship(String fromId, String toId, String relationshipType) {
+            // Mock implementation - do nothing
+        }
+        
+        @Override
+        public void createRelationship(String fromId, String toId, String relationshipType, 
+                                    java.util.Map<String, Object> properties) {
+            // Mock implementation - do nothing
+        }
     }
 } 

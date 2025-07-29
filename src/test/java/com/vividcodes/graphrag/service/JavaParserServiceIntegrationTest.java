@@ -1,31 +1,26 @@
 package com.vividcodes.graphrag.service;
 
-import com.vividcodes.graphrag.config.ParserConfig;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.io.TempDir;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.util.ReflectionTestUtils;
-
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.concurrent.atomic.AtomicInteger;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.springframework.test.util.ReflectionTestUtils;
+import com.vividcodes.graphrag.config.ParserConfig;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
-@ExtendWith(MockitoExtension.class)
 class JavaParserServiceIntegrationTest {
     
-    @Mock
     private GraphService graphService;
-    
     private ParserConfig parserConfig;
     private JavaParserService javaParserService;
     
     @BeforeEach
     void setUp() {
+        // Use a tracking mock implementation instead of Mockito
+        graphService = new TrackingMockGraphService();
+        
         parserConfig = new ParserConfig();
         ReflectionTestUtils.setField(parserConfig, "includePrivate", false);
         ReflectionTestUtils.setField(parserConfig, "includeTests", false);
@@ -59,7 +54,72 @@ class JavaParserServiceIntegrationTest {
         // Parse the file
         javaParserService.parseDirectory(tempDir.toString());
         
-        // Verify that the GraphService was called
-        verify(graphService, atLeastOnce()).saveClass(any());
+        // Verify that the GraphService was called using our tracking mock
+        TrackingMockGraphService trackingService = (TrackingMockGraphService) graphService;
+        assertTrue(trackingService.getSaveClassCount() > 0, "GraphService.saveClass should have been called");
+    }
+    
+    /**
+     * Tracking mock implementation of GraphService for integration testing.
+     * This avoids the Mockito ByteBuddy issues with Java 17.
+     */
+    private static class TrackingMockGraphService implements GraphService {
+        
+        private final AtomicInteger saveClassCount = new AtomicInteger(0);
+        private final AtomicInteger saveMethodCount = new AtomicInteger(0);
+        private final AtomicInteger saveFieldCount = new AtomicInteger(0);
+        private final AtomicInteger savePackageCount = new AtomicInteger(0);
+        private final AtomicInteger createRelationshipCount = new AtomicInteger(0);
+        
+        public int getSaveClassCount() {
+            return saveClassCount.get();
+        }
+        
+        public int getSaveMethodCount() {
+            return saveMethodCount.get();
+        }
+        
+        public int getSaveFieldCount() {
+            return saveFieldCount.get();
+        }
+        
+        public int getSavePackageCount() {
+            return savePackageCount.get();
+        }
+        
+        public int getCreateRelationshipCount() {
+            return createRelationshipCount.get();
+        }
+        
+        @Override
+        public void savePackage(com.vividcodes.graphrag.model.graph.PackageNode packageNode) {
+            savePackageCount.incrementAndGet();
+        }
+        
+        @Override
+        public void saveClass(com.vividcodes.graphrag.model.graph.ClassNode classNode) {
+            saveClassCount.incrementAndGet();
+        }
+        
+        @Override
+        public void saveMethod(com.vividcodes.graphrag.model.graph.MethodNode methodNode) {
+            saveMethodCount.incrementAndGet();
+        }
+        
+        @Override
+        public void saveField(com.vividcodes.graphrag.model.graph.FieldNode fieldNode) {
+            saveFieldCount.incrementAndGet();
+        }
+        
+        @Override
+        public void createRelationship(String fromId, String toId, String relationshipType) {
+            createRelationshipCount.incrementAndGet();
+        }
+        
+        @Override
+        public void createRelationship(String fromId, String toId, String relationshipType, 
+                                    java.util.Map<String, Object> properties) {
+            createRelationshipCount.incrementAndGet();
+        }
     }
 } 

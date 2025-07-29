@@ -11,8 +11,6 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.junit.jupiter.MockitoExtension;
 import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
 import com.vividcodes.graphrag.model.graph.MethodNode;
@@ -30,7 +28,6 @@ import com.vividcodes.graphrag.model.graph.PackageNode;
  * - USES (Method→Field, Method→Class)
  * - DEPENDS_ON (Class→Class)
  */
-@ExtendWith(MockitoExtension.class)
 class GraphRelationshipValidationTest {
     
     private GraphService graphService;

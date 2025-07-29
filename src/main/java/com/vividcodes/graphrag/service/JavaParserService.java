@@ -79,7 +79,7 @@ public class JavaParserService {
     
     boolean shouldIncludeFile(Path filePath) {
         if (filePath == null || filePath.getFileName() == null) {
-            logger.debug("Skipping null or invalid file path: {}", filePath);
+            LOGGER.debug("Skipping null or invalid file path: {}", filePath);
             return false;
         }
         
