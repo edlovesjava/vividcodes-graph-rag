@@ -375,6 +375,13 @@ class GraphRelationshipValidationTest {
         }
         
         @Override
+        public void saveRepository(com.vividcodes.graphrag.model.graph.RepositoryNode repositoryNode) {
+            // Mock implementation - just validate the node
+            assertNotNull(repositoryNode, "RepositoryNode should not be null");
+            assertNotNull(repositoryNode.getId(), "RepositoryNode ID should not be null");
+        }
+        
+        @Override
         public void createRelationship(String fromId, String toId, String relationshipType) {
             // Validate inputs
             validateRelationshipInputs(fromId, toId, relationshipType);

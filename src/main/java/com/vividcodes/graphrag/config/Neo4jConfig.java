@@ -23,6 +23,18 @@ public class Neo4jConfig {
     
     @Bean
     public Driver neo4jDriver() {
-        return GraphDatabase.driver(uri, AuthTokens.basic(username, password));
+        Driver driver = GraphDatabase.driver(uri, AuthTokens.basic(username, password));
+        
+        // Add shutdown hook to properly close the driver
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                driver.close();
+            } catch (Exception e) {
+                // Log but don't throw during shutdown
+                System.err.println("Error closing Neo4j driver: " + e.getMessage());
+            }
+        }));
+        
+        return driver;
     }
 } 

@@ -21,9 +21,13 @@ import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.vividcodes.graphrag.config.ParserConfig;
+import com.vividcodes.graphrag.model.dto.RepositoryMetadata;
 import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
 import com.vividcodes.graphrag.model.graph.MethodNode;
+import com.vividcodes.graphrag.model.graph.PackageNode;
+import com.vividcodes.graphrag.model.graph.RepositoryNode;
+import java.time.LocalDateTime;
 
 @Service
 public class JavaParserService {
@@ -32,12 +36,14 @@ public class JavaParserService {
 
     private final ParserConfig parserConfig;
     private final GraphService graphService;
+    private final RepositoryService repositoryService;
     private final JavaParser javaParser;
 
     @Autowired
-    public JavaParserService(final ParserConfig parserConfig, final GraphService graphService) {
+    public JavaParserService(final ParserConfig parserConfig, final GraphService graphService, final RepositoryService repositoryService) {
         this.parserConfig = parserConfig;
         this.graphService = graphService;
+        this.repositoryService = repositoryService;
         this.javaParser = new JavaParser();
     }
 
@@ -132,12 +138,22 @@ public class JavaParserService {
     private void parseJavaFile(final Path filePath) throws FileNotFoundException {
         LOGGER.debug("Parsing file: {}", filePath);
 
+        // Detect repository metadata for this file
+        RepositoryMetadata repoMetadata = repositoryService.detectRepositoryMetadata(filePath);
+        RepositoryNode repository = repositoryService.createOrUpdateRepository(repoMetadata);
+
         ParseResult<CompilationUnit> parseResult = javaParser.parse(filePath.toFile());
 
         if (parseResult.isSuccessful() && parseResult.getResult().isPresent()) {
             CompilationUnit cu = parseResult.getResult().get();
-            JavaGraphVisitor visitor = new JavaGraphVisitor(filePath.toString());
+            JavaGraphVisitor visitor = new JavaGraphVisitor(filePath.toString(), repoMetadata);
             visitor.visit(cu, null);
+            
+            // Link all created nodes to the repository
+            if (repository != null && !visitor.createdNodes.isEmpty()) {
+                repositoryService.linkNodesToRepository(visitor.createdNodes, repository);
+                LOGGER.info("Linked {} nodes to repository: {}", visitor.createdNodes.size(), repository.getName());
+            }
         } else {
             LOGGER.warn("Failed to parse file: {}", filePath);
         }
@@ -146,18 +162,27 @@ public class JavaParserService {
     private class JavaGraphVisitor extends VoidVisitorAdapter<Void> {
         
         private final String filePath;
+        private final RepositoryMetadata repositoryMetadata;
         private String packageName = "";
         private ClassNode currentClass;
         private final List<MethodNode> currentMethods = new ArrayList<>();
         private final List<FieldNode> currentFields = new ArrayList<>();
+        private final List<Object> createdNodes = new ArrayList<>();
         
-        public JavaGraphVisitor(final String filePath) {
+        public JavaGraphVisitor(final String filePath, final RepositoryMetadata repositoryMetadata) {
             this.filePath = filePath;
+            this.repositoryMetadata = repositoryMetadata;
         }
 
         @Override
         public void visit(final PackageDeclaration packageDecl, final Void arg) {
             this.packageName = packageDecl.getNameAsString();
+            
+            // Create package node
+            PackageNode packageNode = new PackageNode(packageName, packageName, filePath);
+            graphService.savePackage(packageNode);
+            createdNodes.add(packageNode);
+            
             super.visit(packageDecl, arg);
         }
 
@@ -169,6 +194,7 @@ public class JavaParserService {
                 currentClass = createClassNode(classDecl);
                 LOGGER.info("Created class node: {}", currentClass.getId());
                 graphService.saveClass(currentClass);
+                createdNodes.add(currentClass);
                 
                 // Clear current methods and fields for this class
                 currentMethods.clear();
@@ -216,6 +242,7 @@ public class JavaParserService {
                 MethodNode methodNode = createMethodNode(methodDecl);
                 graphService.saveMethod(methodNode);
                 currentMethods.add(methodNode);
+                createdNodes.add(methodNode);
 
                 // Detect method calls within this method
                 detectMethodCalls(methodDecl, methodNode);
@@ -233,6 +260,7 @@ public class JavaParserService {
                     FieldNode fieldNode = createFieldNode(variable.getNameAsString(), fieldDecl);
                     graphService.saveField(fieldNode);
                     currentFields.add(fieldNode);
+                    createdNodes.add(fieldNode);
                 });
             }
         }
@@ -307,6 +335,17 @@ public class JavaParserService {
             classNode.setIsInterface(classDecl.isInterface());
             classNode.setIsEnum(classDecl.isEnumDeclaration());
             classNode.setIsAnnotation(classDecl.isAnnotationDeclaration());
+            
+            // Set repository metadata if available
+            if (repositoryMetadata != null) {
+                classNode.setRepositoryId(repositoryMetadata.getRepositoryId());
+                classNode.setRepositoryName(repositoryMetadata.getRepositoryName());
+                classNode.setRepositoryUrl(repositoryMetadata.getRepositoryUrl());
+                classNode.setBranch(repositoryMetadata.getBranch());
+                classNode.setCommitHash(repositoryMetadata.getCommitHash());
+                classNode.setCommitDate(repositoryMetadata.getCommitDate());
+                classNode.setFileRelativePath(repositoryMetadata.getFileRelativePath());
+            }
             
             if (classDecl.getBegin().isPresent()) {
                 classNode.setLineStart(classDecl.getBegin().get().line);

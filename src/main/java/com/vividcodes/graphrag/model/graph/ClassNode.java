@@ -44,6 +44,27 @@ public class ClassNode {
     @Property("package_name")
     private String packageName;
     
+    @Property("repository_id")
+    private String repositoryId;
+    
+    @Property("repository_name")
+    private String repositoryName;
+    
+    @Property("repository_url")
+    private String repositoryUrl;
+    
+    @Property("branch")
+    private String branch;
+    
+    @Property("commit_hash")
+    private String commitHash;
+    
+    @Property("commit_date")
+    private LocalDateTime commitDate;
+    
+    @Property("file_relative_path")
+    private String fileRelativePath;
+    
     @Property("created_at")
     private LocalDateTime createdAt;
     
@@ -154,6 +175,62 @@ public class ClassNode {
     
     public void setPackageName(String packageName) {
         this.packageName = packageName;
+    }
+    
+    public String getRepositoryId() {
+        return repositoryId;
+    }
+    
+    public void setRepositoryId(String repositoryId) {
+        this.repositoryId = repositoryId;
+    }
+    
+    public String getRepositoryName() {
+        return repositoryName;
+    }
+    
+    public void setRepositoryName(String repositoryName) {
+        this.repositoryName = repositoryName;
+    }
+    
+    public String getRepositoryUrl() {
+        return repositoryUrl;
+    }
+    
+    public void setRepositoryUrl(String repositoryUrl) {
+        this.repositoryUrl = repositoryUrl;
+    }
+    
+    public String getBranch() {
+        return branch;
+    }
+    
+    public void setBranch(String branch) {
+        this.branch = branch;
+    }
+    
+    public String getCommitHash() {
+        return commitHash;
+    }
+    
+    public void setCommitHash(String commitHash) {
+        this.commitHash = commitHash;
+    }
+    
+    public LocalDateTime getCommitDate() {
+        return commitDate;
+    }
+    
+    public void setCommitDate(LocalDateTime commitDate) {
+        this.commitDate = commitDate;
+    }
+    
+    public String getFileRelativePath() {
+        return fileRelativePath;
+    }
+    
+    public void setFileRelativePath(String fileRelativePath) {
+        this.fileRelativePath = fileRelativePath;
     }
     
     public LocalDateTime getCreatedAt() {
