@@ -137,7 +137,220 @@ curl -X POST http://localhost:8080/api/v1/ingest \
   }'
 ```
 
-### 3. Graph Query (Phase 2)
+### 3. Cypher Query
+
+#### POST /cypher
+
+Execute Cypher queries against the Neo4j graph database.
+
+**Request:**
+```http
+POST /api/v1/cypher
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "query": "MATCH (c:Class) RETURN c.name as className, c.file_path as filePath LIMIT 10",
+  "parameters": {
+    "className": "UserService"
+  },
+  "options": {
+    "timeout": 30
+  }
+}
+```
+
+**Request Parameters:**
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `query` | String | Yes | Cypher query to execute |
+| `parameters` | Object | No | Query parameters (key-value pairs) |
+| `options.timeout` | Integer | No | Query timeout in seconds (default: 30) |
+
+**Response:**
+```json
+{
+  "status": "success",
+  "query": "MATCH (c:Class) RETURN c.name as className, c.file_path as filePath LIMIT 10",
+  "executionTime": 15,
+  "resultCount": 5,
+  "results": [
+    {
+      "className": "UserService",
+      "filePath": "/src/main/java/com/example/UserService.java"
+    }
+  ],
+  "statistics": {
+    "nodesCreated": 0,
+    "nodesDeleted": 0,
+    "relationshipsCreated": 0,
+    "relationshipsDeleted": 0,
+    "propertiesSet": 0,
+    "labelsAdded": 0,
+    "labelsRemoved": 0,
+    "indexesAdded": 0,
+    "indexesRemoved": 0,
+    "constraintsAdded": 0,
+    "constraintsRemoved": 0
+  }
+}
+```
+
+**Status Codes:**
+- `200 OK`: Query executed successfully
+- `400 Bad Request`: Invalid query or parameters
+- `500 Internal Server Error`: Query execution error
+
+**Example:**
+```bash
+curl -X POST http://localhost:8080/api/v1/cypher \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "MATCH (c:Class) RETURN c.name as className LIMIT 5"
+  }'
+```
+
+#### GET /cypher/health
+
+Check the health status of the Cypher query service.
+
+**Request:**
+```http
+GET /api/v1/cypher/health
+```
+
+**Response:**
+```json
+{
+  "status": "UP",
+  "cacheSize": 5,
+  "cacheHitRate": 0.75,
+  "totalQueriesExecuted": 100
+}
+```
+
+### 4. Data Management
+
+#### DELETE /data/clear
+
+Clear all data from the graph database.
+
+**Request:**
+```http
+DELETE /api/v1/data/clear
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "All data cleared successfully",
+  "timestamp": "2025-08-25T13:45:30.123Z"
+}
+```
+
+**Status Codes:**
+- `200 OK`: Data cleared successfully
+- `500 Internal Server Error`: Database error
+
+**Example:**
+```bash
+curl -X DELETE http://localhost:8080/api/v1/data/clear
+```
+
+#### POST /data/clear-and-ingest
+
+Clear all data and immediately ingest new data from a specified path.
+
+**Request:**
+```http
+POST /api/v1/data/clear-and-ingest
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "sourcePath": "/path/to/java/project",
+  "includeTestFiles": true
+}
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "message": "Data cleared and ingestion completed successfully",
+  "sourcePath": "/path/to/java/project",
+  "timestamp": "2025-08-25T13:45:30.123Z"
+}
+```
+
+**Status Codes:**
+- `200 OK`: Operation completed successfully
+- `400 Bad Request`: Invalid request parameters
+- `500 Internal Server Error`: Processing error
+
+**Example:**
+```bash
+curl -X POST http://localhost:8080/api/v1/data/clear-and-ingest \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sourcePath": "/path/to/java/project",
+    "includeTestFiles": true
+  }'
+```
+
+#### GET /data/stats
+
+Get statistics about the current data in the graph database.
+
+**Request:**
+```http
+GET /api/v1/data/stats
+```
+
+**Response:**
+```json
+{
+  "status": "success",
+  "statistics": {
+    "totalNodes": 150,
+    "totalRelationships": 300,
+    "nodeTypes": {
+      "Class": 25,
+      "Method": 100,
+      "Field": 20,
+      "Package": 5
+    },
+    "relationshipTypes": {
+      "CONTAINS": 150,
+      "CALLS": 100,
+      "EXTENDS": 25,
+      "IMPLEMENTS": 25
+    },
+    "repositories": {
+      "count": 3,
+      "names": ["repo1", "repo2", "repo3"]
+    }
+  },
+  "timestamp": "2025-08-25T13:45:30.123Z"
+}
+```
+
+**Status Codes:**
+- `200 OK`: Statistics retrieved successfully
+- `500 Internal Server Error`: Database error
+
+**Example:**
+```bash
+curl -X GET http://localhost:8080/api/v1/data/stats
+```
+
+### 5. Graph Query (Phase 2)
 
 #### POST /query
 

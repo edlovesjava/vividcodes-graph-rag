@@ -119,6 +119,45 @@ Ingest Java source code into the graph database.
 
 Check application health status.
 
+### POST /api/v1/cypher
+
+Execute Cypher queries against the Neo4j graph database.
+
+**Request Body:**
+
+```json
+{
+  "query": "MATCH (c:Class) RETURN c.name as className LIMIT 5",
+  "parameters": {
+    "className": "Service"
+  },
+  "options": {
+    "timeout": 30
+  }
+}
+```
+
+### DELETE /api/v1/data/clear
+
+Clear all data from the graph database.
+
+### GET /api/v1/data/stats
+
+Get statistics about the current data in the graph database.
+
+### POST /api/v1/data/clear-and-ingest
+
+Clear all data and immediately ingest new data from a specified path.
+
+**Request Body:**
+
+```json
+{
+  "sourcePath": "/path/to/java/project",
+  "includeTestFiles": true
+}
+```
+
 ## Configuration
 
 ### Application Properties
@@ -197,30 +236,35 @@ docker build -t graph-rag:latest .
 docker-compose up -d
 ```
 
-## Phase 1 Implementation Status
+## Implementation Status
 
-✅ **Completed:**
+✅ **Completed (Phase 1 & Core Features):**
 
 - Spring Boot application setup
 - Neo4j integration
 - Java parser service with JavaParser
-- Graph model classes (Package, Class, Method, Field)
+- Graph model classes (Package, Class, Method, Field, Repository)
+- Repository tracking and Git integration
 - Basic REST API for code ingestion
+- Cypher query endpoint with validation and caching
+- Data management API (clear, stats, clear-and-ingest)
 - Docker setup for Neo4j
-- Unit tests
+- Comprehensive unit and integration tests
 
-🔄 **In Progress:**
+🔄 **In Progress (Phase 2):**
 
-- Relationship detection between code elements
-- Enhanced visibility and modifier parsing
-- Graph query engine
+- Enhanced query capabilities
+- Repository visualization queries
+- API documentation updates
+- Performance testing and optimization
 
-📋 **Next Steps (Phase 2):**
+📋 **Next Steps:**
 
-- Natural language to Cypher query conversion
-- LLM integration for prompt processing
-- Code context retrieval service
-- Query result ranking and filtering
+- **Phase 2.5**: LLM MCP Integration
+- **Phase 3**: Full LLM Integration
+- **Future**: Upsert pattern implementation
+- Repository dependency detection
+- Code similarity across repositories
 
 ## Contributing
 

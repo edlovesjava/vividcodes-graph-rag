@@ -39,6 +39,105 @@ curl -X POST http://localhost:8080/api/v1/ingest \
   }'
 ```
 
+### 3. Cypher Query API
+
+```bash
+curl -X POST http://localhost:8080/api/v1/cypher \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "MATCH (c:Class) RETURN c.name as className LIMIT 5"
+  }'
+```
+
+**Response:**
+
+```json
+{
+  "status": "success",
+  "query": "MATCH (c:Class) RETURN c.name as className LIMIT 5",
+  "executionTime": 15,
+  "resultCount": 3,
+  "results": [
+    {
+      "className": "UserService"
+    },
+    {
+      "className": "UserController"
+    },
+    {
+      "className": "UserRepository"
+    }
+  ],
+  "statistics": {
+    "nodesCreated": 0,
+    "nodesDeleted": 0,
+    "relationshipsCreated": 0,
+    "relationshipsDeleted": 0,
+    "propertiesSet": 0,
+    "labelsAdded": 0,
+    "labelsRemoved": 0,
+    "indexesAdded": 0,
+    "indexesRemoved": 0,
+    "constraintsAdded": 0,
+    "constraintsRemoved": 0
+  }
+}
+```
+
+### 4. Data Management API
+
+#### Clear All Data
+
+```bash
+curl -X DELETE http://localhost:8080/api/v1/data/clear
+```
+
+#### Get Data Statistics
+
+```bash
+curl -X GET http://localhost:8080/api/v1/data/stats
+```
+
+**Response:**
+
+```json
+{
+  "status": "success",
+  "statistics": {
+    "totalNodes": 150,
+    "totalRelationships": 300,
+    "nodeTypes": {
+      "Class": 25,
+      "Method": 100,
+      "Field": 20,
+      "Package": 5
+    },
+    "relationshipTypes": {
+      "CONTAINS": 150,
+      "CALLS": 100,
+      "EXTENDS": 25,
+      "IMPLEMENTS": 25
+    },
+    "repositories": {
+      "count": 3,
+      "names": ["repo1", "repo2", "repo3"]
+    }
+  },
+  "timestamp": "2025-08-25T13:45:30.123Z"
+}
+```
+
+#### Clear and Ingest
+
+```bash
+curl -X POST http://localhost:8080/api/v1/data/clear-and-ingest \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sourcePath": "/path/to/java/project",
+    "includeTestFiles": true
+  }'
+```
+
 ## Graph Query Examples
 
 After ingesting your Java codebase, you can use these Cypher queries to explore the call sequences and relationships between methods.
@@ -340,10 +439,34 @@ ORDER BY controller.name, controllerMethod.name, service.name, serviceMethod.nam
 2. Copy and paste any of the Cypher queries above
 3. Click "Run" to execute
 
-### 2. Via REST API (Future Implementation)
+### 2. Via Cypher REST API
 
 ```bash
-# When the query endpoint is implemented in Phase 2
+# Execute any Cypher query via the REST API
+curl -X POST http://localhost:8080/api/v1/cypher \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "MATCH (m:Method) WHERE m.visibility = \"PUBLIC\" RETURN m.name, m.class_name LIMIT 10"
+  }'
+```
+
+**Example with Parameters:**
+
+```bash
+curl -X POST http://localhost:8080/api/v1/cypher \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "MATCH (c:Class) WHERE c.name CONTAINS $className RETURN c.name, c.file_path",
+    "parameters": {
+      "className": "Service"
+    }
+  }'
+```
+
+### 3. Via Natural Language Query API (Future Implementation)
+
+```bash
+# When the natural language query endpoint is implemented in Phase 2
 curl -X POST http://localhost:8080/api/v1/query \
   -H "Content-Type: application/json" \
   -d '{
