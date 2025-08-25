@@ -15,7 +15,7 @@ Implement a comprehensive Graph Query Engine that can convert natural language p
 ## Timeline
 
 **Duration**: 2-3 weeks
-**Dependencies**: Phase 1 (Core Infrastructure) must be complete
+**Dependencies**: Phase 1 (Core Infrastructure) and Cypher Query Endpoint must be complete
 
 ## Core Requirements
 
