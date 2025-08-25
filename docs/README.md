@@ -2,6 +2,10 @@
 
 Welcome to the Java Graph RAG system documentation. This directory contains comprehensive technical documentation for all aspects of the system.
 
+This directory represents the AS-IS documentation of the system
+
+Descriptions of features being developed are in the prd directory
+
 ## 📚 Documentation Overview
 
 ### Core Documentation

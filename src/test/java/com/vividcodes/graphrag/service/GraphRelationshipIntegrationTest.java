@@ -62,7 +62,7 @@ class GraphRelationshipIntegrationTest {
         ReflectionTestUtils.setField(parserConfig, "includeTests", true);
         ReflectionTestUtils.setField(parserConfig, "maxFileSize", 10 * 1024 * 1024L);
         
-        javaParserService = new JavaParserService(parserConfig, graphService);
+        javaParserService = new JavaParserService(parserConfig, graphService, new SimpleMockRepositoryService());
         
         // Clear the database before each test
         clearDatabase();
@@ -484,5 +484,43 @@ class GraphRelationshipIntegrationTest {
         node.setCreatedAt(LocalDateTime.now());
         node.setUpdatedAt(LocalDateTime.now());
         return node;
+    }
+    
+    /**
+     * Simple mock implementation of RepositoryService for testing.
+     */
+    private static class SimpleMockRepositoryService extends RepositoryService {
+        
+        public SimpleMockRepositoryService() {
+            super(null, null); // Pass null dependencies for testing
+        }
+        
+        @Override
+        public com.vividcodes.graphrag.model.dto.RepositoryMetadata detectRepositoryMetadata(java.nio.file.Path filePath) {
+            // Mock implementation - return null
+            return null;
+        }
+        
+        @Override
+        public com.vividcodes.graphrag.model.graph.RepositoryNode createOrUpdateRepository(com.vividcodes.graphrag.model.dto.RepositoryMetadata metadata) {
+            // Mock implementation - return null
+            return null;
+        }
+        
+        @Override
+        public void linkNodesToRepository(java.util.List<Object> nodes, com.vividcodes.graphrag.model.graph.RepositoryNode repository) {
+            // Mock implementation - do nothing
+        }
+        
+        @Override
+        public void clearCache() {
+            // Mock implementation - do nothing
+        }
+        
+        @Override
+        public java.util.Map<String, Object> getRepositoryStats() {
+            // Mock implementation - return empty map
+            return new java.util.HashMap<>();
+        }
     }
 } 

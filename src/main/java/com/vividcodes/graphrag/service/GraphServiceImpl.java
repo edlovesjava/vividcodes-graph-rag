@@ -12,6 +12,7 @@ import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
 import com.vividcodes.graphrag.model.graph.MethodNode;
 import com.vividcodes.graphrag.model.graph.PackageNode;
+import com.vividcodes.graphrag.model.graph.RepositoryNode;
 
 @Service
 public class GraphServiceImpl implements GraphService {
@@ -72,6 +73,13 @@ public class GraphServiceImpl implements GraphService {
                     c.line_start = $lineStart,
                     c.line_end = $lineEnd,
                     c.package_name = $packageName,
+                    c.repository_id = $repositoryId,
+                    c.repository_name = $repositoryName,
+                    c.repository_url = $repositoryUrl,
+                    c.branch = $branch,
+                    c.commit_hash = $commitHash,
+                    c.commit_date = $commitDate,
+                    c.file_relative_path = $fileRelativePath,
                     c.created_at = $createdAt,
                     c.updated_at = $updatedAt
                 """;
@@ -88,6 +96,13 @@ public class GraphServiceImpl implements GraphService {
                 "lineStart", classNode.getLineStart(),
                 "lineEnd", classNode.getLineEnd(),
                 "packageName", classNode.getPackageName(),
+                "repositoryId", classNode.getRepositoryId(),
+                "repositoryName", classNode.getRepositoryName(),
+                "repositoryUrl", classNode.getRepositoryUrl(),
+                "branch", classNode.getBranch(),
+                "commitHash", classNode.getCommitHash(),
+                "commitDate", classNode.getCommitDate(),
+                "fileRelativePath", classNode.getFileRelativePath(),
                 "createdAt", classNode.getCreatedAt(),
                 "updatedAt", classNode.getUpdatedAt()
             ));
@@ -178,6 +193,48 @@ public class GraphServiceImpl implements GraphService {
         } catch (Exception e) {
             LOGGER.error("Error saving field: {}", fieldNode.getName(), e);
             throw new RuntimeException("Failed to save field", e);
+        }
+    }
+    
+    @Override
+    public void saveRepository(RepositoryNode repositoryNode) {
+        try (Session session = neo4jDriver.session()) {
+            String cypher = """
+                MERGE (r:Repository {id: $id})
+                SET r.name = $name,
+                    r.organization = $organization,
+                    r.url = $url,
+                    r.clone_url = $cloneUrl,
+                    r.default_branch = $defaultBranch,
+                    r.created_at = $createdAt,
+                    r.updated_at = $updatedAt,
+                    r.last_commit_hash = $lastCommitHash,
+                    r.last_commit_date = $lastCommitDate,
+                    r.total_files = $totalFiles,
+                    r.language_stats = $languageStats,
+                    r.local_path = $localPath
+                """;
+            
+            session.run(cypher, Values.parameters(
+                "id", repositoryNode.getId(),
+                "name", repositoryNode.getName(),
+                "organization", repositoryNode.getOrganization(),
+                "url", repositoryNode.getUrl(),
+                "cloneUrl", repositoryNode.getCloneUrl(),
+                "defaultBranch", repositoryNode.getDefaultBranch(),
+                "createdAt", repositoryNode.getCreatedAt(),
+                "updatedAt", repositoryNode.getUpdatedAt(),
+                "lastCommitHash", repositoryNode.getLastCommitHash(),
+                "lastCommitDate", repositoryNode.getLastCommitDate(),
+                "totalFiles", repositoryNode.getTotalFiles(),
+                "languageStats", repositoryNode.getLanguageStats(),
+                "localPath", repositoryNode.getLocalPath()
+            ));
+            
+            LOGGER.info("Saved repository: {} with ID: {}", repositoryNode.getName(), repositoryNode.getId());
+        } catch (Exception e) {
+            LOGGER.error("Error saving repository: {}", repositoryNode.getName(), e);
+            throw new RuntimeException("Failed to save repository", e);
         }
     }
     
