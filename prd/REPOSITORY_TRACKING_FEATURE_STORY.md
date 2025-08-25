@@ -27,6 +27,7 @@
 
 **⏳ NOT STARTED (Phase 2.5, 3 & Future):**
 
+- Upsert Pattern Import (NEW)
 - LLM MCP Integration (Phase 2.5)
 - Full LLM Integration (Phase 3)
 - Repository dependency detection
