@@ -15,7 +15,7 @@ Integrate Large Language Models (LLM) with the Graph Query Engine to enable inte
 ## Timeline
 
 **Duration**: 1-2 weeks
-**Dependencies**: Phase 2 (Graph Query Engine) must be complete
+**Dependencies**: Phase 2 (Graph Query Engine) and Phase 2.5 (LLM MCP Integration) must be complete
 
 ## Core Requirements
 

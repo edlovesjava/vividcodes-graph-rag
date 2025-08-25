@@ -2,7 +2,7 @@
 
 ## Implementation Status Summary
 
-### 🎯 **Overall Progress: 85% Complete**
+### 🎯 **Overall Progress: 80% Complete**
 
 **✅ COMPLETED (Phase 1 & Core Features):**
 
@@ -25,8 +25,10 @@
 - Performance testing and optimization
 - Advanced query capabilities
 
-**⏳ NOT STARTED (Phase 3 & Future):**
+**⏳ NOT STARTED (Phase 2.5, 3 & Future):**
 
+- LLM MCP Integration (Phase 2.5)
+- Full LLM Integration (Phase 3)
 - Repository dependency detection
 - Code similarity across repositories
 - Advanced API endpoints
