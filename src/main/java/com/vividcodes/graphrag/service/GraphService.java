@@ -21,4 +21,14 @@ public interface GraphService {
     void createRelationship(String fromId, String toId, String relationshipType);
     
     void createRelationship(String fromId, String toId, String relationshipType, java.util.Map<String, Object> properties);
+    
+    /**
+     * Clear all data from the graph database
+     */
+    void clearAllData();
+    
+    /**
+     * Get statistics about the current data in the graph database
+     */
+    java.util.Map<String, Object> getDataStatistics();
 } 

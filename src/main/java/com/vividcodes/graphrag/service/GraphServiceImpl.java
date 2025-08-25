@@ -1,8 +1,14 @@
 package com.vividcodes.graphrag.service;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import org.neo4j.driver.Driver;
+import org.neo4j.driver.Record;
+import org.neo4j.driver.Result;
 import org.neo4j.driver.Session;
+import org.neo4j.driver.Value;
 import org.neo4j.driver.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -269,6 +275,103 @@ public class GraphServiceImpl implements GraphService {
         } catch (Exception e) {
             LOGGER.error("Error creating relationship: {} -> {} -> {}", fromId, relationshipType, toId, e);
             throw new RuntimeException("Failed to create relationship", e);
+        }
+    }
+    
+    @Override
+    public void clearAllData() {
+        try (Session session = neo4jDriver.session()) {
+            String cypher = "MATCH (n) DETACH DELETE n";
+            session.run(cypher);
+            LOGGER.info("Cleared all data from the graph database");
+        } catch (Exception e) {
+            LOGGER.error("Error clearing data from graph database", e);
+            throw new RuntimeException("Failed to clear data", e);
+        }
+    }
+    
+    @Override
+    public Map<String, Object> getDataStatistics() {
+        try (Session session = neo4jDriver.session()) {
+            Map<String, Object> stats = new HashMap<>();
+            
+            // Get node counts by type
+            String nodeCountsQuery = """
+                MATCH (n)
+                RETURN labels(n) as nodeType, count(n) as count
+                ORDER BY nodeType
+                """;
+            
+            Result nodeCountsResult = session.run(nodeCountsQuery);
+            Map<String, Long> nodeCounts = new HashMap<>();
+            while (nodeCountsResult.hasNext()) {
+                Record record = nodeCountsResult.next();
+                List<String> labels = record.get("nodeType").asList(Value::asString);
+                String nodeType = String.join(":", labels);
+                long count = record.get("count").asLong();
+                nodeCounts.put(nodeType, count);
+            }
+            stats.put("nodeCounts", nodeCounts);
+            
+            // Get total node count
+            String totalNodesQuery = "MATCH (n) RETURN count(n) as totalNodes";
+            Result totalNodesResult = session.run(totalNodesQuery);
+            long totalNodes = totalNodesResult.single().get("totalNodes").asLong();
+            stats.put("totalNodes", totalNodes);
+            
+            // Get relationship counts by type
+            String relationshipCountsQuery = """
+                MATCH ()-[r]->()
+                RETURN type(r) as relationshipType, count(r) as count
+                ORDER BY relationshipType
+                """;
+            
+            Result relationshipCountsResult = session.run(relationshipCountsQuery);
+            Map<String, Long> relationshipCounts = new HashMap<>();
+            while (relationshipCountsResult.hasNext()) {
+                Record record = relationshipCountsResult.next();
+                String relationshipType = record.get("relationshipType").asString();
+                long count = record.get("count").asLong();
+                relationshipCounts.put(relationshipType, count);
+            }
+            stats.put("relationshipCounts", relationshipCounts);
+            
+            // Get total relationship count
+            String totalRelationshipsQuery = "MATCH ()-[r]->() RETURN count(r) as totalRelationships";
+            Result totalRelationshipsResult = session.run(totalRelationshipsQuery);
+            long totalRelationships = totalRelationshipsResult.single().get("totalRelationships").asLong();
+            stats.put("totalRelationships", totalRelationships);
+            
+            // Get repository statistics
+            String repositoryStatsQuery = """
+                MATCH (r:Repository)
+                RETURN count(r) as repositoryCount,
+                       collect(r.name) as repositoryNames,
+                       collect(r.organization) as organizations
+                """;
+            
+            Result repositoryStatsResult = session.run(repositoryStatsQuery);
+            if (repositoryStatsResult.hasNext()) {
+                Record record = repositoryStatsResult.single();
+                long repositoryCount = record.get("repositoryCount").asLong();
+                List<String> repositoryNames = record.get("repositoryNames").asList(Value::asString);
+                List<String> organizations = record.get("organizations").asList(Value::asString);
+                
+                stats.put("repositoryCount", repositoryCount);
+                stats.put("repositoryNames", repositoryNames);
+                stats.put("organizations", organizations.stream().distinct().toList());
+            } else {
+                stats.put("repositoryCount", 0L);
+                stats.put("repositoryNames", new ArrayList<>());
+                stats.put("organizations", new ArrayList<>());
+            }
+            
+            LOGGER.debug("Retrieved data statistics: {} nodes, {} relationships", totalNodes, totalRelationships);
+            return stats;
+            
+        } catch (Exception e) {
+            LOGGER.error("Error retrieving data statistics", e);
+            throw new RuntimeException("Failed to retrieve data statistics", e);
         }
     }
 } 
