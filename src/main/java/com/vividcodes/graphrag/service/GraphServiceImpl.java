@@ -57,7 +57,7 @@ public class GraphServiceImpl implements GraphService {
                 "updatedAt", packageNode.getUpdatedAt()
             ));
             
-            LOGGER.debug("Saved package: {}", packageNode.getName());
+            LOGGER.info("Saved package: {} with ID: {}", packageNode.getName(), packageNode.getId());
         } catch (Exception e) {
             LOGGER.error("Error saving package: {}", packageNode.getName(), e);
             throw new RuntimeException("Failed to save package", e);

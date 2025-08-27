@@ -1,13 +1,13 @@
 spring:
   application:
     name: graph-rag
-  
+
   neo4j:
     uri: bolt://localhost:7687
     authentication:
       username: neo4j
       password: password
-  
+
   data:
     neo4j:
       database: neo4j
@@ -15,6 +15,16 @@ spring:
       connection-pool:
         max-connection-lifetime: 1h
         max-connection-pool-size: 100
+
+  # DevTools Configuration for Hot Reload
+  devtools:
+    restart:
+      enabled: true
+      additional-paths: src/main/java
+      exclude: static/**,public/**,templates/**
+    livereload:
+      enabled: true
+      port: 35729
 
 server:
   port: 8080
@@ -37,7 +47,7 @@ logging:
 parser:
   include-private: false
   include-tests: false
-  max-file-size: 10485760  # 10MB
+  max-file-size: 10485760 # 10MB
   supported-extensions: java
 
 graph:
@@ -45,4 +55,4 @@ graph:
   indexes:
     enabled: true
   cache:
-    enabled: true 
+    enabled: true

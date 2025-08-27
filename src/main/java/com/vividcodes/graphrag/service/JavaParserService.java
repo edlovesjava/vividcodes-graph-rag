@@ -27,7 +27,6 @@ import com.vividcodes.graphrag.model.graph.FieldNode;
 import com.vividcodes.graphrag.model.graph.MethodNode;
 import com.vividcodes.graphrag.model.graph.PackageNode;
 import com.vividcodes.graphrag.model.graph.RepositoryNode;
-import java.time.LocalDateTime;
 
 @Service
 public class JavaParserService {
@@ -54,8 +53,21 @@ public class JavaParserService {
                 throw new IllegalArgumentException("Source path does not exist: " + sourcePath);
             }
 
-            List<Path> javaFiles = findJavaFiles(rootPath);
-            LOGGER.info("Found {} Java files to parse", javaFiles.size());
+            List<Path> javaFiles;
+            if (Files.isRegularFile(rootPath)) {
+                // If it's a single file, check if it's a Java file
+                if (rootPath.toString().endsWith(".java") && shouldIncludeFile(rootPath)) {
+                    javaFiles = List.of(rootPath);
+                    LOGGER.info("Processing single Java file: {}", rootPath);
+                } else {
+                    LOGGER.warn("File {} is not a Java file or should be excluded", rootPath);
+                    return;
+                }
+            } else {
+                // If it's a directory, find all Java files
+                javaFiles = findJavaFiles(rootPath);
+                LOGGER.info("Found {} Java files to parse in directory", javaFiles.size());
+            }
 
             for (Path javaFile : javaFiles) {
                 try {
@@ -74,12 +86,20 @@ public class JavaParserService {
     }
 
     private List<Path> findJavaFiles(final Path rootPath) throws Exception {
+        LOGGER.info("Finding Java files in directory: {}", rootPath);
         try (Stream<Path> paths = Files.walk(rootPath)) {
-            return paths
+            List<Path> javaFiles = paths
                 .filter(Files::isRegularFile)
                 .filter(path -> path.toString().endsWith(".java"))
                 .filter(this::shouldIncludeFile)
                 .collect(Collectors.toList());
+            
+            LOGGER.info("Found {} Java files in directory {}", javaFiles.size(), rootPath);
+            for (Path file : javaFiles) {
+                LOGGER.debug("Found Java file: {}", file);
+            }
+            
+            return javaFiles;
         }
     }
     
@@ -136,23 +156,46 @@ public class JavaParserService {
     }
     
     private void parseJavaFile(final Path filePath) throws FileNotFoundException {
-        LOGGER.debug("Parsing file: {}", filePath);
+        LOGGER.info("Parsing file: {}", filePath);
 
         // Detect repository metadata for this file
         RepositoryMetadata repoMetadata = repositoryService.detectRepositoryMetadata(filePath);
+        LOGGER.info("Repository metadata for {}: {}", filePath, repoMetadata != null ? "found" : "null");
+        
         RepositoryNode repository = repositoryService.createOrUpdateRepository(repoMetadata);
+        LOGGER.info("Repository node for {}: {}", filePath, repository != null ? "created/found" : "null");
 
         ParseResult<CompilationUnit> parseResult = javaParser.parse(filePath.toFile());
+        LOGGER.info("Parse result for {}: {}", filePath, parseResult.isSuccessful() ? "successful" : "failed");
+        
+        if (!parseResult.isSuccessful()) {
+            LOGGER.error("Parsing failed for file: {}. Problems: {}", filePath, parseResult.getProblems());
+        }
 
         if (parseResult.isSuccessful() && parseResult.getResult().isPresent()) {
             CompilationUnit cu = parseResult.getResult().get();
+            LOGGER.info("Successfully parsed file: {}. CompilationUnit has {} types", filePath, cu.getTypes().size());
             JavaGraphVisitor visitor = new JavaGraphVisitor(filePath.toString(), repoMetadata);
-            visitor.visit(cu, null);
+            LOGGER.info("Created JavaGraphVisitor for file: {}", filePath);
+            try {
+                visitor.visit(cu, null);
+                LOGGER.info("Visitor visit completed successfully for file: {}", filePath);
+            } catch (Exception e) {
+                LOGGER.error("Exception during visitor visit for file: {}", filePath, e);
+            }
             
-            // Link all created nodes to the repository
-            if (repository != null && !visitor.createdNodes.isEmpty()) {
-                repositoryService.linkNodesToRepository(visitor.createdNodes, repository);
-                LOGGER.info("Linked {} nodes to repository: {}", visitor.createdNodes.size(), repository.getName());
+            LOGGER.info("Visitor created {} nodes for file: {}", visitor.createdNodes.size(), filePath);
+            
+            // Link all created nodes to the repository (even if repository is null, still create the nodes)
+            if (!visitor.createdNodes.isEmpty()) {
+                if (repository != null) {
+                    repositoryService.linkNodesToRepository(visitor.createdNodes, repository);
+                    LOGGER.info("Linked {} nodes to repository: {}", visitor.createdNodes.size(), repository.getName());
+                } else {
+                    LOGGER.warn("No repository found, but created {} nodes for file: {}", visitor.createdNodes.size(), filePath);
+                }
+            } else {
+                LOGGER.warn("No nodes created for file: {}", filePath);
             }
         } else {
             LOGGER.warn("Failed to parse file: {}", filePath);
@@ -176,20 +219,23 @@ public class JavaParserService {
 
         @Override
         public void visit(final PackageDeclaration packageDecl, final Void arg) {
+            LOGGER.info("Visiting package declaration: {}", packageDecl.getNameAsString());
             this.packageName = packageDecl.getNameAsString();
             
             // Create package node
             PackageNode packageNode = new PackageNode(packageName, packageName, filePath);
+            LOGGER.info("Created package node: {} with ID: {}", packageNode.getName(), packageNode.getId());
             graphService.savePackage(packageNode);
             createdNodes.add(packageNode);
+            LOGGER.info("Added package node to createdNodes list. Total nodes: {}", createdNodes.size());
             
             super.visit(packageDecl, arg);
         }
 
         @Override
         public void visit(final ClassOrInterfaceDeclaration classDecl, final Void arg) {
-            // Only process public classes/interfaces
-            if (classDecl.isPublic() || parserConfig.isIncludePrivate()) {
+                    // TEMPORARILY: Process all classes/interfaces for debugging
+        if (true || classDecl.isPublic() || parserConfig.isIncludePrivate()) {
                 LOGGER.info("Processing class: {}", classDecl.getNameAsString());
                 currentClass = createClassNode(classDecl);
                 LOGGER.info("Created class node: {}", currentClass.getId());
@@ -237,8 +283,8 @@ public class JavaParserService {
         
         @Override
         public void visit(final MethodDeclaration methodDecl, final Void arg) {
-            // Only process public methods
-            if (methodDecl.isPublic() || parserConfig.isIncludePrivate()) {
+                    // TEMPORARILY: Process all methods for debugging
+        if (true || methodDecl.isPublic() || parserConfig.isIncludePrivate()) {
                 MethodNode methodNode = createMethodNode(methodDecl);
                 graphService.saveMethod(methodNode);
                 currentMethods.add(methodNode);
@@ -254,8 +300,8 @@ public class JavaParserService {
         
         @Override
         public void visit(FieldDeclaration fieldDecl, Void arg) {
-            // Only process public fields
-            if (fieldDecl.isPublic() || parserConfig.isIncludePrivate()) {
+                    // TEMPORARILY: Process all fields for debugging
+        if (true || fieldDecl.isPublic() || parserConfig.isIncludePrivate()) {
                 fieldDecl.getVariables().forEach(variable -> {
                     FieldNode fieldNode = createFieldNode(variable.getNameAsString(), fieldDecl);
                     graphService.saveField(fieldNode);

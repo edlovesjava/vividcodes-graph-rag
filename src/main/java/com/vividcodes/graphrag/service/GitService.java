@@ -23,23 +23,31 @@ public class GitService {
      */
     public boolean isGitRepository(Path path) {
         Path gitDir = path.resolve(".git");
-        return Files.exists(gitDir) && Files.isDirectory(gitDir);
+        boolean exists = Files.exists(gitDir);
+        boolean isDirectory = Files.isDirectory(gitDir);
+        LOGGER.debug("Checking if {} is a Git repository: .git exists={}, isDirectory={}", path, exists, isDirectory);
+        return exists && isDirectory;
     }
     
     /**
      * Find the Git repository root for a given file path
      */
     public Optional<Path> findGitRepositoryRoot(Path filePath) {
+        LOGGER.info("Finding Git repository root for file: {}", filePath);
         Path current = filePath.toAbsolutePath();
+        LOGGER.info("Starting search from: {}", current);
         
         // Walk up the directory tree looking for .git
         while (current != null && Files.exists(current)) {
+            LOGGER.debug("Checking directory: {}", current);
             if (isGitRepository(current)) {
+                LOGGER.info("Found Git repository at: {}", current);
                 return Optional.of(current);
             }
             current = current.getParent();
         }
         
+        LOGGER.warn("No Git repository found for file: {}", filePath);
         return Optional.empty();
     }
     
@@ -196,10 +204,13 @@ public class GitService {
      * Create repository metadata for a file
      */
     public RepositoryMetadata createRepositoryMetadata(Path filePath) {
+        LOGGER.info("Creating repository metadata for file: {}", filePath);
         Optional<Path> repoRoot = findGitRepositoryRoot(filePath);
         
         if (repoRoot.isPresent()) {
             Path repositoryPath = repoRoot.get();
+            LOGGER.info("Found Git repository root: {}", repositoryPath);
+            
             String repoName = extractRepositoryName(repositoryPath);
             String remoteUrl = getRemoteUrl(repositoryPath);
             String organization = extractOrganization(remoteUrl);
@@ -208,7 +219,10 @@ public class GitService {
             LocalDateTime commitDate = getCommitDate(repositoryPath);
             
             // Calculate relative path from repository root
-            String relativePath = repositoryPath.relativize(filePath).toString();
+            // Convert both paths to the same type to avoid Path type mismatch
+            Path normalizedRepoPath = repositoryPath.normalize().toAbsolutePath();
+            Path normalizedFilePath = filePath.normalize().toAbsolutePath();
+            String relativePath = normalizedRepoPath.relativize(normalizedFilePath).toString();
             
             RepositoryMetadata metadata = new RepositoryMetadata(repoName, repositoryPath.toString());
             metadata.setRepositoryUrl(remoteUrl);
@@ -218,13 +232,13 @@ public class GitService {
             metadata.setCommitDate(commitDate);
             metadata.setFileRelativePath(relativePath);
             
-            LOGGER.debug("Created repository metadata for file {}: repo={}, org={}, branch={}", 
+            LOGGER.info("Created repository metadata for file {}: repo={}, org={}, branch={}", 
                         filePath, repoName, organization, branch);
             
             return metadata;
         } else {
             // Not in a git repository
-            LOGGER.debug("File {} is not in a git repository", filePath);
+            LOGGER.warn("File {} is not in a git repository", filePath);
             return null;
         }
     }

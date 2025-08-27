@@ -126,6 +126,17 @@ class JavaParserServiceIntegrationTest {
         public void saveRepository(com.vividcodes.graphrag.model.graph.RepositoryNode repositoryNode) {
             // Mock implementation - do nothing
         }
+        
+        @Override
+        public void clearAllData() {
+            // Mock implementation - do nothing
+        }
+        
+        @Override
+        public java.util.Map<String, Object> getDataStatistics() {
+            // Mock implementation - return empty map
+            return new java.util.HashMap<>();
+        }
     }
     
     /**

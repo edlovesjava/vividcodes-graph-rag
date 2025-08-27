@@ -122,6 +122,17 @@ class JavaParserServiceTest {
                                     java.util.Map<String, Object> properties) {
             // Mock implementation - do nothing
         }
+        
+        @Override
+        public void clearAllData() {
+            // Mock implementation - do nothing
+        }
+        
+        @Override
+        public java.util.Map<String, Object> getDataStatistics() {
+            // Mock implementation - return empty map
+            return new java.util.HashMap<>();
+        }
     }
     
     /**

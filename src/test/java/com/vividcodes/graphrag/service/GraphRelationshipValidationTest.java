@@ -427,5 +427,16 @@ class GraphRelationshipValidationTest {
                 throw new IllegalArgumentException("Relationship type cannot be null or empty");
             }
         }
+        
+        @Override
+        public void clearAllData() {
+            // Mock implementation - do nothing
+        }
+        
+        @Override
+        public java.util.Map<String, Object> getDataStatistics() {
+            // Mock implementation - return empty map
+            return new java.util.HashMap<>();
+        }
     }
 } 
