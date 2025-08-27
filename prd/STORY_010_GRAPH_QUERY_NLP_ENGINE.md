@@ -1,8 +1,10 @@
-# Phase 2: Graph Query Engine Story
+# Phase 2: Graph Query NLP
+
+Engine Story
 
 ## Overview
 
-Implement a comprehensive Graph Query Engine that can convert natural language prompts into Cypher queries, execute them against the Neo4j graph database, and return relevant code context with precise line number references.
+Implement a comprehensive Graph Query NLP endpoint that can convert natural language prompts into Cypher queries, execute them against the Neo4j graph database, and return relevant code context with precise line number references.
 
 ## Objectives
 
@@ -11,12 +13,6 @@ Implement a comprehensive Graph Query Engine that can convert natural language p
 - Create code context retrieval service
 - Add semantic search capabilities
 - Implement query result ranking and relevance scoring
-
-## Timeline
-
-**Duration**: 2-3 weeks
-**Dependencies**: Phase 1 (Core Infrastructure) and Cypher Query Endpoint must be complete
-**Prerequisites**: Before Phase 2.5 (LLM MCP Integration)
 
 ## Core Requirements
 
