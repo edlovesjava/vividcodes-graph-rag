@@ -573,6 +573,13 @@ POST /api/v1/ingest
 - [ ] Repository audit logging
 - [ ] Repository compliance reporting
 
+### Non-Git Project Support ⏳ **NOT STARTED**
+
+- [ ] Non-Git repository detection using directory names
+- [ ] Project root detection for non-Git directories
+- [ ] Git status indication in repository metadata
+- [ ] Seamless transition from non-Git to Git repositories
+
 ## Success Metrics 🔄 **IN PROGRESS**
 
 ### Technical Metrics 🔄 **IN PROGRESS**

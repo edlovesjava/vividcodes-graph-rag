@@ -102,30 +102,30 @@ public class CodeContextService {
     public CodeContext getMethodContext(String methodName, String className) {
         // Build Cypher query to find method context
         String query = queryComposer.buildMethodContextQuery(methodName, className);
-        
+
         // Execute query and format results
         QueryResult result = cypherQueryService.executeQuery(query);
-        
+
         return formatContext(result);
     }
 
     public CodeContext getClassContext(String className) {
         // Build Cypher query to find class context
         String query = queryComposer.buildClassContextQuery(className);
-        
+
         // Execute query and format results
         QueryResult result = cypherQueryService.executeQuery(query);
-        
+
         return formatContext(result);
     }
 
     public CodeContext getCallHierarchy(String methodName) {
         // Build Cypher query to find call hierarchy
         String query = queryComposer.buildCallHierarchyQuery(methodName);
-        
+
         // Execute query and format results
         QueryResult result = cypherQueryService.executeQuery(query);
-        
+
         return formatContext(result);
     }
 
@@ -186,7 +186,7 @@ public class QueryComposerService {
 ```java
 public class MCPResourceList {
     private List<MCPResource> resources;
-    
+
     public static class MCPResource {
         private String uri;
         private String name;
