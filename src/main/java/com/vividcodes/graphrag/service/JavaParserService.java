@@ -323,6 +323,13 @@ public class JavaParserService {
                        graphService.createRelationship(currentClass.getId(), field.getId(), "CONTAINS");
                        LOGGER.debug("Created CONTAINS relationship: {} -> {}", currentClass.getName(), field.getName());
                    }
+                   
+                   // Create CONTAINS relationship from package to class
+                   if (!packageName.isEmpty()) {
+                       String packageId = "package:" + packageName + ":" + packageName;
+                       graphService.createRelationship(packageId, currentClass.getId(), "CONTAINS");
+                       LOGGER.debug("Created CONTAINS relationship: package {} -> class {}", packageName, currentClass.getName());
+                   }
         }
         
         private void detectMethodCalls(MethodDeclaration methodDecl, MethodNode methodNode) {
@@ -375,6 +382,8 @@ public class JavaParserService {
                 packageName,
                 filePath
             );
+            
+            // Fully qualified name is now set in constructor
             
             classNode.setVisibility(getVisibility(classDecl));
             classNode.setModifiers(getModifiers(classDecl));

@@ -44,6 +44,9 @@ public class ClassNode {
     @Property("package_name")
     private String packageName;
     
+    @Property("fqn")
+    private String fullyQualifiedName;
+    
     @Property("repository_id")
     private String repositoryId;
     
@@ -82,6 +85,8 @@ public class ClassNode {
         this.packageName = packageName;
         this.filePath = filePath;
         this.id = generateId(name, packageName);
+        // Set fully qualified name immediately in constructor
+        this.fullyQualifiedName = packageName.isEmpty() ? name : packageName + "." + name;
     }
     
     private String generateId(String name, String packageName) {
@@ -175,6 +180,14 @@ public class ClassNode {
     
     public void setPackageName(String packageName) {
         this.packageName = packageName;
+    }
+    
+    public String getFullyQualifiedName() {
+        return fullyQualifiedName;
+    }
+    
+    public void setFullyQualifiedName(String fullyQualifiedName) {
+        this.fullyQualifiedName = fullyQualifiedName;
     }
     
     public String getRepositoryId() {
