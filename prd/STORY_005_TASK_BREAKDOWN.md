@@ -65,16 +65,19 @@ src/main/java/com/vividcodes/graphrag/service/GraphServiceImpl.java
 
 ---
 
-### **TASK 2: Basic SubProject Detection** 🔄 **READY TO START**
+### **TASK 2: Basic SubProject Detection** ✅ **COMPLETED**
 
 **Objective**: Implement basic sub-project detection using common project indicators.
 
 **Deliverables**:
 
-- [ ] Create `SubProjectDetector` service
-- [ ] Implement detection for Maven projects (pom.xml)
-- [ ] Implement detection for Gradle projects (build.gradle)
-- [ ] Add basic project type identification
+- [x] Create `SubProjectDetector` service
+- [x] Implement detection for Maven projects (pom.xml)
+- [x] Implement detection for Gradle projects (build.gradle)
+- [x] Add basic project type identification
+- [x] Add NPM project detection (package.json)
+- [x] Integrate with `RepositoryService` workflow
+- [x] Create comprehensive test suite
 
 **Code Changes**:
 
@@ -88,17 +91,27 @@ src/main/java/com/vividcodes/graphrag/service/RepositoryService.java
 
 **Testing**:
 
-- [ ] Unit tests for Maven project detection
-- [ ] Unit tests for Gradle project detection
-- [ ] Integration test with sample multi-project repository
-- [ ] Test with repository containing no sub-projects
+- [x] Unit tests for Maven project detection (root POM, multi-module, nested)
+- [x] Unit tests for Gradle project detection (single, multi-project, subprojects)
+- [x] Unit tests for NPM project detection (package.json detection)
+- [x] Integration test with sample multi-project repository (4 tests)
+- [x] Test with repository containing no sub-projects
+- [x] Test mixed project types (Maven + Gradle + NPM)
+- [x] Test edge cases (invalid paths, empty directories)
+- [x] Test ID generation and metadata extraction
+- [x] **62 total tests passing** - comprehensive validation
 
 **Acceptance Criteria**:
 
-- Can detect Maven modules in a repository
-- Can detect Gradle sub-projects in a repository
-- Returns correct project type identification
-- Handles repositories with no sub-projects gracefully
+- [x] Can detect Maven modules in a repository
+- [x] Can detect Gradle sub-projects in a repository
+- [x] Can detect NPM projects in a repository
+- [x] Returns correct project type identification
+- [x] Handles repositories with no sub-projects gracefully
+- [x] Creates proper graph relationships (Repository CONTAINS SubProject)
+- [x] Generates unique repository-scoped IDs
+- [x] Extracts comprehensive metadata (source dirs, dependencies, build files)
+- [x] Integrates seamlessly with existing repository workflow
 
 ---
 

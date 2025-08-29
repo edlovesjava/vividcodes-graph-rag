@@ -10,7 +10,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.vividcodes.graphrag.model.dto.RepositoryMetadata;
+import com.vividcodes.graphrag.model.dto.SubProjectMetadata;
 import com.vividcodes.graphrag.model.graph.RepositoryNode;
+import com.vividcodes.graphrag.model.graph.SubProjectNode;
 
 @Service
 public class RepositoryService {
@@ -19,14 +21,16 @@ public class RepositoryService {
     
     private final GitService gitService;
     private final GraphService graphService;
+    private final SubProjectDetector subProjectDetector;
     
     // Cache for repository nodes to avoid duplicate creation
     private final Map<String, RepositoryNode> repositoryCache = new ConcurrentHashMap<>();
     
     @Autowired
-    public RepositoryService(GitService gitService, GraphService graphService) {
+    public RepositoryService(GitService gitService, GraphService graphService, SubProjectDetector subProjectDetector) {
         this.gitService = gitService;
         this.graphService = graphService;
+        this.subProjectDetector = subProjectDetector;
     }
     
     /**
@@ -72,6 +76,75 @@ public class RepositoryService {
                    repositoryNode.getName(), repositoryNode.getOrganization(), repositoryNode.getDefaultBranch());
         
         return repositoryNode;
+    }
+    
+    /**
+     * Detect and create sub-projects within a repository
+     */
+    public List<SubProjectNode> detectAndCreateSubProjects(RepositoryNode repository) {
+        if (repository == null || repository.getLocalPath() == null) {
+            LOGGER.debug("No repository or local path provided, skipping sub-project detection");
+            return List.of();
+        }
+        
+        LOGGER.info("Detecting sub-projects in repository: {}", repository.getName());
+        
+        // Detect sub-projects using the detector service
+        List<SubProjectMetadata> detectedProjects = subProjectDetector.detectSubProjects(
+            repository.getLocalPath(), 
+            repository.getId()
+        );
+        
+        // Convert metadata to nodes and save them
+        List<SubProjectNode> subProjectNodes = detectedProjects.stream()
+            .map(this::createSubProjectNode)
+            .toList();
+        
+        // Save sub-projects to database and create relationships
+        for (SubProjectNode subProject : subProjectNodes) {
+            graphService.saveSubProject(subProject);
+            
+            // Create CONTAINS relationship from repository to sub-project
+            graphService.createRelationship(repository.getId(), subProject.getId(), "CONTAINS");
+            
+            LOGGER.debug("Created sub-project: {} of type {} in repository {}", 
+                        subProject.getName(), subProject.getType(), repository.getName());
+        }
+        
+        LOGGER.info("Created {} sub-projects for repository: {}", subProjectNodes.size(), repository.getName());
+        return subProjectNodes;
+    }
+    
+    /**
+     * Convert SubProjectMetadata to SubProjectNode
+     */
+    private SubProjectNode createSubProjectNode(SubProjectMetadata metadata) {
+        SubProjectNode node = new SubProjectNode();
+        node.setId(metadata.getId());
+        node.setName(metadata.getName());
+        node.setPath(metadata.getPath());
+        node.setType(metadata.getType());
+        node.setBuildFile(metadata.getBuildFile());
+        node.setSourceDirectories(metadata.getSourceDirectories());
+        node.setTestDirectories(metadata.getTestDirectories());
+        node.setDependencies(metadata.getDependencies());
+        node.setDescription(metadata.getDescription());
+        node.setVersion(metadata.getVersion());
+        node.setRepositoryId(metadata.getRepositoryId());
+        
+        // Set initial scores (can be calculated later)
+        node.setHealthScore(null);
+        node.setComplexityScore(null);
+        node.setMaintainabilityScore(null);
+        
+        return node;
+    }
+    
+    /**
+     * Find sub-projects by repository ID
+     */
+    public List<SubProjectNode> findSubProjectsByRepository(String repositoryId) {
+        return graphService.findSubProjectsByRepositoryId(repositoryId);
     }
     
     /**

@@ -228,16 +228,14 @@ class GraphServiceSubProjectTest {
         public void createRelationship(String fromId, String toId, String relationshipType) {}
         
         @Override
-        public void clearDatabase() {}
+        public void clearAllData() {}
         
         @Override
-        public java.util.Map<String, Object> getDatabaseStatistics() {
+        public java.util.Map<String, Object> getDataStatistics() {
             return new java.util.HashMap<>();
         }
         
         @Override
-        public boolean executeQuery(String cypherQuery) {
-            return true;
-        }
+        public void createRelationship(String fromId, String toId, String relationshipType, java.util.Map<String, Object> properties) {}
     }
 }
