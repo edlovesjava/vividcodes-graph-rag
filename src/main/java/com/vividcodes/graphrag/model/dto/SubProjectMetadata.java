@@ -208,7 +208,10 @@ public class SubProjectMetadata {
             return null;
         }
         // Remove leading slashes and normalize
-        return path.replaceAll("^[/\\\\]+", "").replace("\\", "/");
+        String normalized = path.replaceAll("^[/\\\\]+", "").replace("\\", "/");
+        // Replace multiple consecutive slashes with single slash
+        normalized = normalized.replaceAll("/+", "/");
+        return normalized;
     }
     
     @Override

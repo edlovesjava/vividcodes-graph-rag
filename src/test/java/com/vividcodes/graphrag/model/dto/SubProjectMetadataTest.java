@@ -276,12 +276,20 @@ class SubProjectMetadataTest {
         String type = "maven";
         
         SubProjectMetadata meta1 = new SubProjectMetadata(name, path, type);
+        
+        // Add small delay to ensure different timestamps
+        try {
+            Thread.sleep(1);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+        
         SubProjectMetadata meta2 = new SubProjectMetadata(name, path, type);
         SubProjectMetadata meta3 = new SubProjectMetadata("different", path, type);
         
         SubProjectMetadata metaWithNullId = new SubProjectMetadata();
         
-        // IDs should be different due to timestamp
+        // IDs should be different due to timestamp in constructor
         assertNotEquals(meta1.getId(), meta2.getId());
         
         // Set same ID for equality test
@@ -299,6 +307,11 @@ class SubProjectMetadataTest {
         
         // Test hashCode consistency
         assertEquals(meta1.hashCode(), meta2.hashCode());
+        
+        // Test that objects with different IDs are not equal
+        meta3.setId("different-id");
+        assertNotEquals(meta1, meta3);
+        assertNotEquals(meta1.hashCode(), meta3.hashCode());
     }
     
     @Test
