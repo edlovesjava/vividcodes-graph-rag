@@ -10,7 +10,8 @@ Enable the Java Graph RAG system to ingest and analyze JAR (Java Archive) files,
 
 **Solution**: Add JAR file ingestion capabilities to analyze compiled Java bytecode, extract class metadata, and create graph relationships for complete dependency analysis.
 
-**Impact**: 
+**Impact**:
+
 - **Complete Ecosystem Analysis**: Understand both source and binary components
 - **Dependency Mapping**: Map relationships between source code and JAR dependencies
 - **Third-Party Library Analysis**: Analyze external libraries and frameworks
@@ -36,6 +37,7 @@ Enable the Java Graph RAG system to ingest and analyze JAR (Java Archive) files,
 ## Acceptance Criteria
 
 ### Core Functionality
+
 - [ ] **JAR File Detection**: Automatically detect and process .jar files in specified directories
 - [ ] **Bytecode Analysis**: Extract class metadata from compiled .class files within JARs
 - [ ] **Manifest Processing**: Parse JAR manifest files for version and dependency information
@@ -44,6 +46,7 @@ Enable the Java Graph RAG system to ingest and analyze JAR (Java Archive) files,
 - [ ] **Dependency Mapping**: Link source code to JAR dependencies through import analysis
 
 ### Graph Integration
+
 - [ ] **JAR Nodes**: Create `JarFile` nodes with metadata (name, version, path, checksum)
 - [ ] **Class Relationship**: Link JAR classes to source code usage
 - [ ] **Package Hierarchy**: Maintain package structure within JAR context
@@ -51,6 +54,7 @@ Enable the Java Graph RAG system to ingest and analyze JAR (Java Archive) files,
 - [ ] **Version Tracking**: Support multiple versions of the same JAR
 
 ### Performance & Scalability
+
 - [ ] **Efficient Processing**: Handle large JAR files (>100MB) without memory issues
 - [ ] **Selective Extraction**: Option to process only public API classes
 - [ ] **Caching**: Cache processed JAR metadata to avoid reprocessing
@@ -61,6 +65,7 @@ Enable the Java Graph RAG system to ingest and analyze JAR (Java Archive) files,
 ### Architecture Components
 
 #### 1. JAR Detection Service
+
 ```java
 @Service
 public class JarDetectionService {
@@ -70,7 +75,8 @@ public class JarDetectionService {
 }
 ```
 
-#### 2. Bytecode Analysis Service  
+#### 2. Bytecode Analysis Service
+
 ```java
 @Service
 public class BytecodeAnalysisService {
@@ -81,6 +87,7 @@ public class BytecodeAnalysisService {
 ```
 
 #### 3. JAR Graph Service
+
 ```java
 @Service
 public class JarGraphService {
@@ -93,6 +100,7 @@ public class JarGraphService {
 ### Data Models
 
 #### JAR File Node
+
 ```java
 @Node("JarFile")
 public class JarFileNode {
@@ -108,7 +116,8 @@ public class JarFileNode {
 }
 ```
 
-#### JAR Class Node  
+#### JAR Class Node
+
 ```java
 @Node("JarClass")
 public class JarClassNode {
@@ -129,16 +138,19 @@ public class JarClassNode {
 ### Integration Points
 
 #### 1. Repository Service Enhancement
+
 - Extend repository detection to include JAR files
 - Add JAR processing to repository ingestion workflow
 - Support mixed source + JAR repository structures
 
-#### 2. JavaParser Service Integration  
+#### 2. JavaParser Service Integration
+
 - Link source code imports to JAR classes
 - Identify external dependencies from import statements
 - Create usage relationships between source and JAR classes
 
 #### 3. SubProject Support
+
 - Associate JARs with specific sub-projects
 - Handle JAR dependencies in multi-module projects
 - Support different JAR versions across sub-projects
@@ -146,18 +158,21 @@ public class JarClassNode {
 ## Implementation Phases
 
 ### Phase 1: Basic JAR Processing (1-2 weeks)
+
 - **TASK 1**: JAR file detection and validation
 - **TASK 2**: Basic bytecode analysis using ASM library
 - **TASK 3**: JAR metadata extraction (manifest, basic class info)
 - **TASK 4**: Simple graph node creation for JARs and classes
 
-### Phase 2: Advanced Analysis (1-2 weeks)  
+### Phase 2: Advanced Analysis (1-2 weeks)
+
 - **TASK 5**: Complete class metadata extraction (methods, fields, inheritance)
 - **TASK 6**: Package hierarchy reconstruction
 - **TASK 7**: Dependency analysis and relationship creation
 - **TASK 8**: Integration with existing source code analysis
 
 ### Phase 3: Performance & Features (1 week)
+
 - **TASK 9**: Performance optimization for large JARs
 - **TASK 10**: Caching and incremental processing
 - **TASK 11**: JAR comparison and version analysis
@@ -166,6 +181,7 @@ public class JarClassNode {
 ## Technical Specifications
 
 ### Dependencies
+
 ```xml
 <!-- ASM Library for Bytecode Analysis -->
 <dependency>
@@ -181,6 +197,7 @@ public class JarClassNode {
 ```
 
 ### Configuration Options
+
 ```yaml
 jar-ingestion:
   enabled: true
@@ -196,8 +213,9 @@ jar-ingestion:
 ```
 
 ### Graph Relationships
+
 - `Repository CONTAINS JarFile`
-- `SubProject CONTAINS JarFile`  
+- `SubProject CONTAINS JarFile`
 - `JarFile CONTAINS JarClass`
 - `JarFile DEPENDS_ON JarFile`
 - `Class USES JarClass`
@@ -207,6 +225,7 @@ jar-ingestion:
 ## API Enhancements
 
 ### Ingestion Endpoint Updates
+
 ```json
 {
   "sourcePath": "/path/to/project",
@@ -220,6 +239,7 @@ jar-ingestion:
 ```
 
 ### Query Examples
+
 ```cypher
 // Find all JAR dependencies for a project
 MATCH (r:Repository)-[:CONTAINS]->(j:JarFile)
@@ -240,12 +260,14 @@ RETURN j1.name, j1.version, j2.version
 ## Success Metrics
 
 ### Functional Metrics
+
 - **JAR Processing Speed**: < 1 minute per 100MB JAR file
 - **Memory Usage**: < 2GB heap for processing largest expected JARs
 - **Accuracy**: 99%+ class and dependency detection accuracy
 - **Coverage**: Support for 95%+ of common JAR formats
 
-### Quality Metrics  
+### Quality Metrics
+
 - **Test Coverage**: > 90% code coverage for JAR processing components
 - **Performance Tests**: Validate processing of 1000+ JAR files
 - **Integration Tests**: End-to-end JAR ingestion workflows
@@ -254,6 +276,7 @@ RETURN j1.name, j1.version, j2.version
 ## Future Enhancements
 
 ### Advanced Features (Future Stories)
+
 - **Security Scanning**: Integration with vulnerability databases
 - **License Analysis**: Extract and analyze JAR license information
 - **Decompilation**: Optional source code reconstruction for analysis
@@ -261,6 +284,7 @@ RETURN j1.name, j1.version, j2.version
 - **Native Dependencies**: Support for JARs with native libraries
 
 ### Integration Opportunities
+
 - **Build Tool Integration**: Maven/Gradle dependency analysis
 - **CI/CD Pipeline**: Automated JAR analysis in deployment pipelines
 - **IDE Extensions**: Real-time JAR dependency insights
@@ -269,11 +293,13 @@ RETURN j1.name, j1.version, j2.version
 ## Risk Assessment
 
 ### Technical Risks
+
 - **Memory Usage**: Large JARs may cause memory pressure
-- **Processing Time**: Complex JARs may slow ingestion significantly  
+- **Processing Time**: Complex JARs may slow ingestion significantly
 - **Compatibility**: Different Java versions may have varying bytecode formats
 
 ### Mitigation Strategies
+
 - **Streaming Processing**: Process JAR entries incrementally
 - **Configurable Limits**: Allow users to set processing boundaries
 - **Fallback Handling**: Graceful degradation for unsupported formats
@@ -282,17 +308,20 @@ RETURN j1.name, j1.version, j2.version
 ## Dependencies & Prerequisites
 
 ### Technical Dependencies
+
 - ASM library for bytecode analysis
 - Enhanced graph schema for JAR nodes
 - Updated ingestion pipeline architecture
 - Additional indexes for performance
 
-### Story Dependencies  
+### Story Dependencies
+
 - **STORY_001**: Repository tracking (completed)
-- **STORY_005**: Multi-project support (completed) 
+- **STORY_005**: Multi-project support (completed)
 - **STORY_002**: Cypher query endpoint (for testing)
 
 ### External Dependencies
+
 - None - uses standard Java JAR format
 - Optional: Integration with Maven Central for metadata enrichment
 
@@ -305,7 +334,7 @@ This story significantly enhances the system's analysis capabilities by bridging
 ## Story Ownership
 
 - **Technical Lead**: [To be assigned]
-- **Product Owner**: [To be assigned]  
+- **Product Owner**: [To be assigned]
 - **Estimated Effort**: 3-4 weeks
 - **Priority**: Medium-High
 - **Dependencies**: STORY_001, STORY_005

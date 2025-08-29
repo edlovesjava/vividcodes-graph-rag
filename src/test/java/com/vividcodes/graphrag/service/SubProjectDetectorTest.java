@@ -314,4 +314,334 @@ class SubProjectDetectorTest {
         // Ensure all IDs are unique
         assertEquals(2, ids.stream().distinct().count());
     }
+    
+    @Test
+    void testParseMavenMetadata_WithVersionAndDescription() throws IOException {
+        // Create a comprehensive pom.xml with version and description
+        String pomContent = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <project xmlns="http://maven.apache.org/POM/4.0.0">
+                <modelVersion>4.0.0</modelVersion>
+                <groupId>com.example</groupId>
+                <artifactId>test-project</artifactId>
+                <version>1.2.3</version>
+                <name>Test Project</name>
+                <description>A test Maven project for unit testing</description>
+                
+                <dependencies>
+                    <dependency>
+                        <groupId>org.junit.jupiter</groupId>
+                        <artifactId>junit-jupiter</artifactId>
+                        <version>5.9.2</version>
+                        <scope>test</scope>
+                    </dependency>
+                    <dependency>
+                        <groupId>org.springframework</groupId>
+                        <artifactId>spring-core</artifactId>
+                        <version>6.0.0</version>
+                    </dependency>
+                </dependencies>
+            </project>
+            """;
+        
+        Files.writeString(tempDir.resolve("pom.xml"), pomContent);
+        
+        List<SubProjectMetadata> projects = detector.detectSubProjects(tempDir.toString(), "test-repo");
+        
+        assertEquals(1, projects.size());
+        SubProjectMetadata project = projects.get(0);
+        
+        // Verify enhanced metadata
+        assertEquals("1.2.3", project.getVersion());
+        assertEquals("A test Maven project for unit testing", project.getDescription());
+        assertNotNull(project.getDependencies());
+        assertEquals(2, project.getDependencies().size());
+        
+        // Check specific dependencies
+        assertTrue(project.getDependencies().contains("org.junit.jupiter:junit-jupiter:5.9.2"));
+        assertTrue(project.getDependencies().contains("org.springframework:spring-core:6.0.0"));
+    }
+    
+    @Test
+    void testParseMavenMetadata_WithParentVersion() throws IOException {
+        // Create a pom.xml that inherits version from parent
+        String pomContent = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <project xmlns="http://maven.apache.org/POM/4.0.0">
+                <modelVersion>4.0.0</modelVersion>
+                
+                <parent>
+                    <groupId>com.example</groupId>
+                    <artifactId>parent-project</artifactId>
+                    <version>2.1.0</version>
+                </parent>
+                
+                <artifactId>child-project</artifactId>
+                <description>Child project inheriting version</description>
+                
+                <dependencies>
+                    <dependency>
+                        <groupId>commons-lang</groupId>
+                        <artifactId>commons-lang</artifactId>
+                    </dependency>
+                </dependencies>
+            </project>
+            """;
+        
+        Files.writeString(tempDir.resolve("pom.xml"), pomContent);
+        
+        List<SubProjectMetadata> projects = detector.detectSubProjects(tempDir.toString(), "test-repo");
+        
+        assertEquals(1, projects.size());
+        SubProjectMetadata project = projects.get(0);
+        
+        // Should inherit version from parent
+        assertEquals("2.1.0", project.getVersion());
+        assertEquals("Child project inheriting version", project.getDescription());
+        
+        // Check dependency without version (should still be included)
+        assertEquals(1, project.getDependencies().size());
+        assertTrue(project.getDependencies().contains("commons-lang:commons-lang"));
+    }
+    
+    @Test
+    void testParseMavenMetadata_MalformedXML() throws IOException {
+        // Create malformed XML to test error handling
+        String malformedContent = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <project xmlns="http://maven.apache.org/POM/4.0.0">
+                <modelVersion>4.0.0</modelVersion>
+                <groupId>com.example</groupId>
+                <artifactId>malformed-project</artifactId>
+                <!-- Missing closing tag intentionally
+            </project>
+            """;
+        
+        Files.writeString(tempDir.resolve("pom.xml"), malformedContent);
+        
+        List<SubProjectMetadata> projects = detector.detectSubProjects(tempDir.toString(), "test-repo");
+        
+        assertEquals(1, projects.size());
+        SubProjectMetadata project = projects.get(0);
+        
+        // Should have fallback values when parsing fails
+        assertEquals("unknown", project.getVersion());
+        assertEquals("Maven project at ", project.getDescription());
+        assertNotNull(project.getDependencies());
+        assertTrue(project.getDependencies().isEmpty());
+    }
+    
+    @Test
+    void testParseGradleMetadata_WithVersionAndDescription() throws IOException {
+        // Create a comprehensive build.gradle with version and description
+        String gradleContent = """
+            plugins {
+                id 'java'
+                id 'org.springframework.boot' version '3.1.0'
+            }
+            
+            group = 'com.example'
+            version = '2.5.1'
+            description = 'A comprehensive Gradle project for testing'
+            
+            repositories {
+                mavenCentral()
+            }
+            
+            dependencies {
+                implementation 'org.springframework.boot:spring-boot-starter-web'
+                implementation 'org.apache.commons:commons-lang3:3.12.0'
+                testImplementation 'org.junit.jupiter:junit-jupiter:5.9.2'
+                api 'com.fasterxml.jackson.core:jackson-core:2.15.0'
+            }
+            
+            test {
+                useJUnitPlatform()
+            }
+            """;
+        
+        Files.writeString(tempDir.resolve("build.gradle"), gradleContent);
+        
+        List<SubProjectMetadata> projects = detector.detectSubProjects(tempDir.toString(), "test-repo");
+        
+        assertEquals(1, projects.size());
+        SubProjectMetadata project = projects.get(0);
+        
+        // Verify enhanced metadata
+        assertEquals("2.5.1", project.getVersion());
+        assertEquals("A comprehensive Gradle project for testing", project.getDescription());
+        assertNotNull(project.getDependencies());
+        assertEquals(4, project.getDependencies().size());
+        
+        // Check specific dependencies with scopes
+        assertTrue(project.getDependencies().contains("org.springframework.boot:spring-boot-starter-web (implementation)"));
+        assertTrue(project.getDependencies().contains("org.apache.commons:commons-lang3:3.12.0 (implementation)"));
+        assertTrue(project.getDependencies().contains("org.junit.jupiter:junit-jupiter:5.9.2 (testImplementation)"));
+        assertTrue(project.getDependencies().contains("com.fasterxml.jackson.core:jackson-core:2.15.0 (api)"));
+    }
+    
+    @Test
+    void testParseGradleMetadata_MinimalBuildFile() throws IOException {
+        // Create minimal build.gradle
+        String gradleContent = """
+            plugins {
+                id 'java'
+            }
+            
+            repositories {
+                mavenCentral()
+            }
+            """;
+        
+        Files.writeString(tempDir.resolve("build.gradle"), gradleContent);
+        
+        List<SubProjectMetadata> projects = detector.detectSubProjects(tempDir.toString(), "test-repo");
+        
+        assertEquals(1, projects.size());
+        SubProjectMetadata project = projects.get(0);
+        
+        // Should have fallback values for missing metadata
+        assertEquals("unknown", project.getVersion());
+        assertEquals("Gradle project at ", project.getDescription());
+        assertNotNull(project.getDependencies());
+        assertTrue(project.getDependencies().isEmpty());
+    }
+    
+    @Test
+    void testParseNpmMetadata_CompletePackageJson() throws IOException {
+        // Create comprehensive package.json
+        String packageContent = """
+            {
+              "name": "test-npm-project",
+              "version": "3.1.4",
+              "description": "A comprehensive NPM project for testing enhanced metadata",
+              "main": "index.js",
+              "scripts": {
+                "test": "jest",
+                "start": "node index.js"
+              },
+              "dependencies": {
+                "express": "^4.18.0",
+                "lodash": "4.17.21",
+                "axios": "~1.3.0"
+              },
+              "devDependencies": {
+                "jest": "^29.5.0",
+                "nodemon": "^2.0.20"
+              },
+              "keywords": ["test", "npm", "metadata"],
+              "author": "Test Author",
+              "license": "MIT"
+            }
+            """;
+        
+        Files.writeString(tempDir.resolve("package.json"), packageContent);
+        
+        List<SubProjectMetadata> projects = detector.detectSubProjects(tempDir.toString(), "test-repo");
+        
+        assertEquals(1, projects.size());
+        SubProjectMetadata project = projects.get(0);
+        
+        // Verify enhanced metadata
+        assertEquals("3.1.4", project.getVersion());
+        assertEquals("A comprehensive NPM project for testing enhanced metadata", project.getDescription());
+        assertNotNull(project.getDependencies());
+        assertEquals(5, project.getDependencies().size());
+        
+        // Check regular dependencies
+        assertTrue(project.getDependencies().contains("express:^4.18.0"));
+        assertTrue(project.getDependencies().contains("lodash:4.17.21"));
+        assertTrue(project.getDependencies().contains("axios:~1.3.0"));
+        
+        // Check dev dependencies (marked with "(dev)")
+        assertTrue(project.getDependencies().contains("jest:^29.5.0 (dev)"));
+        assertTrue(project.getDependencies().contains("nodemon:^2.0.20 (dev)"));
+    }
+    
+    @Test
+    void testParseNpmMetadata_MinimalPackageJson() throws IOException {
+        // Create minimal package.json
+        String packageContent = """
+            {
+              "name": "minimal-npm-project",
+              "main": "index.js"
+            }
+            """;
+        
+        Files.writeString(tempDir.resolve("package.json"), packageContent);
+        
+        List<SubProjectMetadata> projects = detector.detectSubProjects(tempDir.toString(), "test-repo");
+        
+        assertEquals(1, projects.size());
+        SubProjectMetadata project = projects.get(0);
+        
+        // Should have fallback values for missing metadata
+        assertEquals("unknown", project.getVersion());
+        assertEquals("NPM project at ", project.getDescription());
+        assertNotNull(project.getDependencies());
+        assertTrue(project.getDependencies().isEmpty());
+    }
+    
+    @Test
+    void testParseNpmMetadata_MalformedJson() throws IOException {
+        // Create malformed JSON to test error handling
+        String malformedContent = """
+            {
+              "name": "malformed-project",
+              "version": "1.0.0"
+              "description": "Missing comma above"
+            }
+            """;
+        
+        Files.writeString(tempDir.resolve("package.json"), malformedContent);
+        
+        List<SubProjectMetadata> projects = detector.detectSubProjects(tempDir.toString(), "test-repo");
+        
+        assertEquals(1, projects.size());
+        SubProjectMetadata project = projects.get(0);
+        
+        // Should have fallback values when parsing fails
+        assertEquals("unknown", project.getVersion());
+        assertEquals("NPM project at ", project.getDescription());
+        assertNotNull(project.getDependencies());
+        assertTrue(project.getDependencies().isEmpty());
+    }
+    
+    @Test
+    void testEnhancedMetadataWithSourceDirectories() throws IOException {
+        // Create Maven project with custom source directories and enhanced metadata
+        String pomContent = """
+            <?xml version="1.0" encoding="UTF-8"?>
+            <project xmlns="http://maven.apache.org/POM/4.0.0">
+                <modelVersion>4.0.0</modelVersion>
+                <groupId>com.example</groupId>
+                <artifactId>enhanced-project</artifactId>
+                <version>1.0.0-SNAPSHOT</version>
+                <description>Enhanced project with custom directories</description>
+            </project>
+            """;
+        
+        Files.writeString(tempDir.resolve("pom.xml"), pomContent);
+        
+        // Create various source directory patterns
+        Files.createDirectories(tempDir.resolve("src/main/java"));
+        Files.createDirectories(tempDir.resolve("src/main/kotlin"));
+        Files.createDirectories(tempDir.resolve("src/test/java"));
+        Files.createDirectories(tempDir.resolve("src/test/groovy"));
+        
+        List<SubProjectMetadata> projects = detector.detectSubProjects(tempDir.toString(), "test-repo");
+        
+        assertEquals(1, projects.size());
+        SubProjectMetadata project = projects.get(0);
+        
+        // Verify enhanced metadata is preserved along with directory detection
+        assertEquals("1.0.0-SNAPSHOT", project.getVersion());
+        assertEquals("Enhanced project with custom directories", project.getDescription());
+        
+        // Verify source directory detection still works
+        assertTrue(project.getSourceDirectories().contains("src/main/java"));
+        assertTrue(project.getSourceDirectories().contains("src/main/kotlin"));
+        assertTrue(project.getTestDirectories().contains("src/test/java"));
+        assertTrue(project.getTestDirectories().contains("src/test/groovy"));
+    }
 }

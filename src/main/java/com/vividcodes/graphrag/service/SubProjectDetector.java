@@ -9,9 +9,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.vividcodes.graphrag.model.dto.SubProjectMetadata;
 
 /**
@@ -22,6 +30,7 @@ import com.vividcodes.graphrag.model.dto.SubProjectMetadata;
 public class SubProjectDetector {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(SubProjectDetector.class);
+    private final ObjectMapper objectMapper = new ObjectMapper();
     
     // Common build file patterns
     private static final String MAVEN_BUILD_FILE = "pom.xml";
@@ -208,9 +217,8 @@ public class SubProjectDetector {
         subProject.setSourceDirectories(detectSourceDirectories(projectDir, JAVA_SOURCE_PATTERNS));
         subProject.setTestDirectories(detectSourceDirectories(projectDir, JAVA_TEST_PATTERNS));
         
-        // TODO: Parse pom.xml to extract more metadata (dependencies, version, description)
-        // For now, set basic info
-        subProject.setDescription("Maven project detected at " + relativePath);
+        // Parse pom.xml to extract enhanced metadata
+        parseMavenMetadata(pomFile, subProject);
         
         return subProject;
     }
@@ -243,9 +251,8 @@ public class SubProjectDetector {
         subProject.setSourceDirectories(detectSourceDirectories(projectDir, JAVA_SOURCE_PATTERNS));
         subProject.setTestDirectories(detectSourceDirectories(projectDir, JAVA_TEST_PATTERNS));
         
-        // TODO: Parse build.gradle to extract more metadata (dependencies, version, description)
-        // For now, set basic info
-        subProject.setDescription("Gradle project detected at " + relativePath);
+        // Parse build.gradle to extract enhanced metadata
+        parseGradleMetadata(buildFile, subProject);
         
         return subProject;
     }
@@ -281,9 +288,8 @@ public class SubProjectDetector {
         subProject.setSourceDirectories(detectSourceDirectories(projectDir, npmSourcePatterns));
         subProject.setTestDirectories(detectSourceDirectories(projectDir, npmTestPatterns));
         
-        // TODO: Parse package.json to extract more metadata (dependencies, version, description)
-        // For now, set basic info
-        subProject.setDescription("NPM project detected at " + relativePath);
+        // Parse package.json to extract enhanced metadata
+        parseNpmMetadata(packageFile, subProject);
         
         return subProject;
     }
@@ -350,5 +356,196 @@ public class SubProjectDetector {
             default:
                 return null;
         }
+    }
+    
+    /**
+     * Parse Maven POM file to extract enhanced metadata
+     */
+    private void parseMavenMetadata(final Path pomFile, final SubProjectMetadata subProject) {
+        try {
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder builder = factory.newDocumentBuilder();
+            Document document = builder.parse(pomFile.toFile());
+            document.getDocumentElement().normalize();
+            
+            Element root = document.getDocumentElement();
+            
+            // Extract version
+            String version = getTextContent(root, "version");
+            if (version == null || version.isEmpty()) {
+                // Try parent version if no direct version
+                NodeList parentNodes = root.getElementsByTagName("parent");
+                if (parentNodes.getLength() > 0) {
+                    Element parent = (Element) parentNodes.item(0);
+                    version = getTextContent(parent, "version");
+                }
+            }
+            subProject.setVersion(version != null ? version : "unknown");
+            
+            // Extract description
+            String description = getTextContent(root, "description");
+            if (description == null || description.isEmpty()) {
+                description = "Maven project at " + subProject.getPath();
+            }
+            subProject.setDescription(description);
+            
+            // Extract dependencies
+            List<String> dependencies = new ArrayList<>();
+            NodeList dependencyNodes = root.getElementsByTagName("dependency");
+            for (int i = 0; i < dependencyNodes.getLength(); i++) {
+                Element dependency = (Element) dependencyNodes.item(i);
+                String groupId = getTextContent(dependency, "groupId");
+                String artifactId = getTextContent(dependency, "artifactId");
+                String depVersion = getTextContent(dependency, "version");
+                
+                if (groupId != null && artifactId != null) {
+                    String depString = groupId + ":" + artifactId;
+                    if (depVersion != null && !depVersion.isEmpty()) {
+                        depString += ":" + depVersion;
+                    }
+                    dependencies.add(depString);
+                }
+            }
+            subProject.setDependencies(dependencies);
+            
+            LOGGER.debug("Parsed Maven metadata: version={}, description={}, dependencies={}", 
+                        version, description, dependencies.size());
+                        
+        } catch (Exception e) {
+            LOGGER.warn("Failed to parse Maven metadata from {}: {}", pomFile, e.getMessage());
+            // Set fallback values
+            subProject.setVersion("unknown");
+            subProject.setDescription("Maven project at " + subProject.getPath());
+            subProject.setDependencies(new ArrayList<>());
+        }
+    }
+    
+    /**
+     * Parse Gradle build file to extract enhanced metadata
+     */
+    private void parseGradleMetadata(final Path buildFile, final SubProjectMetadata subProject) {
+        try {
+            String content = Files.readString(buildFile);
+            
+            // Extract version (simple regex parsing)
+            String version = extractGradleProperty(content, "version");
+            subProject.setVersion(version != null ? version : "unknown");
+            
+            // Extract description
+            String description = extractGradleProperty(content, "description");
+            if (description == null || description.isEmpty()) {
+                description = "Gradle project at " + subProject.getPath();
+            }
+            subProject.setDescription(description);
+            
+            // Extract dependencies (basic parsing - could be enhanced)
+            List<String> dependencies = extractGradleDependencies(content);
+            subProject.setDependencies(dependencies);
+            
+            LOGGER.debug("Parsed Gradle metadata: version={}, description={}, dependencies={}", 
+                        version, description, dependencies.size());
+                        
+        } catch (Exception e) {
+            LOGGER.warn("Failed to parse Gradle metadata from {}: {}", buildFile, e.getMessage());
+            // Set fallback values
+            subProject.setVersion("unknown");
+            subProject.setDescription("Gradle project at " + subProject.getPath());
+            subProject.setDependencies(new ArrayList<>());
+        }
+    }
+    
+    /**
+     * Parse NPM package.json file to extract enhanced metadata
+     */
+    private void parseNpmMetadata(final Path packageFile, final SubProjectMetadata subProject) {
+        try {
+            JsonNode packageJson = objectMapper.readTree(packageFile.toFile());
+            
+            // Extract version
+            String version = packageJson.has("version") ? packageJson.get("version").asText() : "unknown";
+            subProject.setVersion(version);
+            
+            // Extract description
+            String description = packageJson.has("description") ? packageJson.get("description").asText() : null;
+            if (description == null || description.isEmpty()) {
+                description = "NPM project at " + subProject.getPath();
+            }
+            subProject.setDescription(description);
+            
+            // Extract dependencies
+            List<String> dependencies = new ArrayList<>();
+            if (packageJson.has("dependencies")) {
+                JsonNode deps = packageJson.get("dependencies");
+                deps.fieldNames().forEachRemaining(depName -> {
+                    String depVersion = deps.get(depName).asText();
+                    dependencies.add(depName + ":" + depVersion);
+                });
+            }
+            if (packageJson.has("devDependencies")) {
+                JsonNode devDeps = packageJson.get("devDependencies");
+                devDeps.fieldNames().forEachRemaining(depName -> {
+                    String depVersion = devDeps.get(depName).asText();
+                    dependencies.add(depName + ":" + depVersion + " (dev)");
+                });
+            }
+            subProject.setDependencies(dependencies);
+            
+            LOGGER.debug("Parsed NPM metadata: version={}, description={}, dependencies={}", 
+                        version, description, dependencies.size());
+                        
+        } catch (Exception e) {
+            LOGGER.warn("Failed to parse NPM metadata from {}: {}", packageFile, e.getMessage());
+            // Set fallback values
+            subProject.setVersion("unknown");
+            subProject.setDescription("NPM project at " + subProject.getPath());
+            subProject.setDependencies(new ArrayList<>());
+        }
+    }
+    
+    /**
+     * Helper method to get text content from XML element
+     */
+    private String getTextContent(final Element parent, final String tagName) {
+        NodeList nodeList = parent.getElementsByTagName(tagName);
+        if (nodeList.getLength() > 0) {
+            Node node = nodeList.item(0);
+            if (node != null) {
+                return node.getTextContent().trim();
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Extract property from Gradle build file using simple regex
+     */
+    private String extractGradleProperty(final String content, final String propertyName) {
+        String pattern = propertyName + "\\s*=\\s*['\"]([^'\"]+)['\"]";
+        java.util.regex.Pattern regex = java.util.regex.Pattern.compile(pattern);
+        java.util.regex.Matcher matcher = regex.matcher(content);
+        if (matcher.find()) {
+            return matcher.group(1);
+        }
+        return null;
+    }
+    
+    /**
+     * Extract dependencies from Gradle build file (basic implementation)
+     */
+    private List<String> extractGradleDependencies(final String content) {
+        List<String> dependencies = new ArrayList<>();
+        
+        // Simple regex to find implementation/compile dependencies
+        String pattern = "(implementation|compile|api|testImplementation)\\s+['\"]([^'\"]+)['\"]";
+        java.util.regex.Pattern regex = java.util.regex.Pattern.compile(pattern);
+        java.util.regex.Matcher matcher = regex.matcher(content);
+        
+        while (matcher.find()) {
+            String scope = matcher.group(1);
+            String dependency = matcher.group(2);
+            dependencies.add(dependency + " (" + scope + ")");
+        }
+        
+        return dependencies;
     }
 }
