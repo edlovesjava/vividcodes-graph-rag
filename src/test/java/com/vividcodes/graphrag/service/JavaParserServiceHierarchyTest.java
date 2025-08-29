@@ -5,11 +5,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 import com.vividcodes.graphrag.model.graph.SubProjectNode;
+import com.vividcodes.graphrag.model.graph.RepositoryNode;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
-import java.io.IOException;
+
 import java.lang.reflect.Method;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -125,8 +126,12 @@ class JavaParserServiceHierarchyTest {
      * Use reflection to call the private findContainingSubProject method
      */
     private SubProjectNode callFindContainingSubProject(Path javaFile, List<SubProjectNode> subProjects) throws Exception {
-        Method method = JavaParserService.class.getDeclaredMethod("findContainingSubProject", Path.class, List.class);
+        // Create a mock repository for the test
+        RepositoryNode mockRepository = new RepositoryNode();
+        mockRepository.setLocalPath(tempDir.toString());
+        
+        Method method = JavaParserService.class.getDeclaredMethod("findContainingSubProject", Path.class, List.class, RepositoryNode.class);
         method.setAccessible(true);
-        return (SubProjectNode) method.invoke(javaParserService, javaFile, subProjects);
+        return (SubProjectNode) method.invoke(javaParserService, javaFile, subProjects, mockRepository);
     }
 }

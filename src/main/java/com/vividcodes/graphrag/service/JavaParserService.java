@@ -26,8 +26,8 @@ import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
 import com.vividcodes.graphrag.model.graph.MethodNode;
 import com.vividcodes.graphrag.model.graph.PackageNode;
-import com.vividcodes.graphrag.model.graph.SubProjectNode;
 import com.vividcodes.graphrag.model.graph.RepositoryNode;
+import com.vividcodes.graphrag.model.graph.SubProjectNode;
 
 @Service
 public class JavaParserService {
@@ -176,7 +176,7 @@ public class JavaParserService {
         }
         
         // Determine which sub-project this Java file belongs to
-        SubProjectNode containingSubProject = findContainingSubProject(filePath, subProjects);
+        SubProjectNode containingSubProject = findContainingSubProject(filePath, subProjects, repository);
         LOGGER.debug("Java file {} belongs to sub-project: {}", 
                     filePath, containingSubProject != null ? containingSubProject.getName() : "none");
 
@@ -524,20 +524,36 @@ public class JavaParserService {
      * Determine which sub-project contains the given Java file
      * Returns the most specific (longest path) sub-project that contains the file
      */
-    private SubProjectNode findContainingSubProject(Path javaFilePath, List<SubProjectNode> subProjects) {
+    private SubProjectNode findContainingSubProject(Path javaFilePath, List<SubProjectNode> subProjects, RepositoryNode repository) {
         if (subProjects == null || subProjects.isEmpty()) {
             LOGGER.debug("No sub-projects found, file {} not contained in any sub-project", javaFilePath);
             return null;
         }
         
+        if (repository == null || repository.getLocalPath() == null) {
+            LOGGER.debug("No repository or local path available, cannot determine sub-project for file {}", javaFilePath);
+            return null;
+        }
+        
         Path absoluteJavaPath = javaFilePath.toAbsolutePath().normalize();
+        Path repositoryPath = Paths.get(repository.getLocalPath()).toAbsolutePath().normalize();
         SubProjectNode bestMatch = null;
         String longestMatchingPath = "";
         
         // Find the sub-project with the longest path that still contains the Java file
         for (SubProjectNode subProject : subProjects) {
             try {
-                Path subProjectPath = Paths.get(subProject.getPath()).toAbsolutePath().normalize();
+                // Construct absolute sub-project path by combining repository path + relative sub-project path
+                Path subProjectPath;
+                String subProjectRelativePath = subProject.getPath();
+                
+                if (subProjectRelativePath == null || subProjectRelativePath.trim().isEmpty()) {
+                    // Root sub-project: use repository path directly
+                    subProjectPath = repositoryPath;
+                } else {
+                    // Combine repository path with sub-project relative path
+                    subProjectPath = repositoryPath.resolve(subProjectRelativePath).normalize();
+                }
                 
                 // Check if the Java file is within this sub-project's directory
                 if (absoluteJavaPath.startsWith(subProjectPath)) {
@@ -546,8 +562,8 @@ public class JavaParserService {
                     if (subProjectPathStr.length() > longestMatchingPath.length()) {
                         bestMatch = subProject;
                         longestMatchingPath = subProjectPathStr;
-                        LOGGER.debug("File {} found better match in sub-project {} at path {}", 
-                                   javaFilePath, subProject.getName(), subProject.getPath());
+                        LOGGER.debug("File {} found better match in sub-project {} at resolved path {}", 
+                                   javaFilePath, subProject.getName(), subProjectPath);
                     }
                 }
             } catch (Exception e) {
