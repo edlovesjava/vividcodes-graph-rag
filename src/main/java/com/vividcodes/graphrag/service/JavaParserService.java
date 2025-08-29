@@ -5,7 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.slf4j.Logger;
@@ -15,10 +17,14 @@ import org.springframework.stereotype.Service;
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
+import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import com.github.javaparser.ast.expr.MethodCallExpr;
+
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.vividcodes.graphrag.config.ParserConfig;
 import com.vividcodes.graphrag.model.dto.RepositoryMetadata;
@@ -230,6 +236,9 @@ public class JavaParserService {
         private final List<Object> createdNodes = new ArrayList<>();
         private PackageNode currentPackage;
         
+        // Track imported classes for dependency analysis
+        private final Map<String, String> importedClasses = new HashMap<>(); // className -> fullyQualifiedName
+        
         public JavaGraphVisitor(final String filePath, final RepositoryMetadata repositoryMetadata, final SubProjectNode containingSubProject) {
             this.filePath = filePath;
             this.repositoryMetadata = repositoryMetadata;
@@ -253,6 +262,27 @@ public class JavaParserService {
         }
 
         @Override
+        public void visit(final ImportDeclaration importDecl, final Void arg) {
+            String fullyQualifiedName = importDecl.getNameAsString();
+            LOGGER.debug("Processing import: {}", fullyQualifiedName);
+            
+            // Extract the simple class name from the fully qualified name
+            String className = extractSimpleClassName(fullyQualifiedName);
+            
+            // Store the mapping for later class name resolution
+            importedClasses.put(className, fullyQualifiedName);
+            
+            // Create or get the imported class node (creates it in the database)
+            getOrCreateClassNode(className, fullyQualifiedName);
+            
+            // We'll create the USES relationship when we process the class that contains this import
+            // For now, just track the import for later processing
+            LOGGER.debug("Registered import: {} -> {}", className, fullyQualifiedName);
+            
+            super.visit(importDecl, arg);
+        }
+
+        @Override
         public void visit(final ClassOrInterfaceDeclaration classDecl, final Void arg) {
                     // TEMPORARILY: Process all classes/interfaces for debugging
         if (true || classDecl.isPublic() || parserConfig.isIncludePrivate()) {
@@ -271,6 +301,9 @@ public class JavaParserService {
                 
                 // Create CONTAINS relationships for this class
                 createContainsRelationships();
+                
+                // Create USES relationships for imported classes
+                createImportUsesRelationships();
                 
                 // Create EXTENDS relationship if this class extends another
                 if (classDecl.getExtendedTypes().isNonEmpty()) {
@@ -323,10 +356,43 @@ public class JavaParserService {
                     // TEMPORARILY: Process all fields for debugging
         if (true || fieldDecl.isPublic() || parserConfig.isIncludePrivate()) {
                 fieldDecl.getVariables().forEach(variable -> {
-                    FieldNode fieldNode = createFieldNode(variable.getNameAsString(), fieldDecl);
+                    String fieldName = variable.getNameAsString();
+                    FieldNode fieldNode = createFieldNode(fieldName, fieldDecl);
                     graphService.saveField(fieldNode);
                     currentFields.add(fieldNode);
                     createdNodes.add(fieldNode);
+                    
+                    // Detect object instantiations in field initializations
+                    variable.getInitializer().ifPresent(initializer -> {
+                        initializer.findAll(ObjectCreationExpr.class).forEach(newExpr -> {
+                            String className = newExpr.getType().getNameAsString();
+                            LOGGER.debug("Detected object instantiation in field {}: new {}", fieldName, className);
+                            
+                            // Resolve the class name using imports
+                            String fullyQualifiedName = importedClasses.getOrDefault(className, className);
+                            
+                            // Create or get the instantiated class node
+                            ClassNode instantiatedClass = getOrCreateClassNode(className, fullyQualifiedName);
+                            
+                            // Create USES relationship with instantiation metadata
+                            Map<String, Object> relationshipMetadata = Map.of(
+                                "type", "instantiation",
+                                "fullyQualifiedName", fullyQualifiedName,
+                                "context", "field:" + fieldName,
+                                "isExternal", instantiatedClass.getIsExternal()
+                            );
+                            
+                            graphService.createRelationship(
+                                currentClass.getId(), 
+                                instantiatedClass.getId(), 
+                                "USES", 
+                                relationshipMetadata
+                            );
+                            
+                            LOGGER.debug("Created USES relationship for field instantiation: {} -> {} ({})", 
+                                       currentClass.getName(), className, fullyQualifiedName);
+                        });
+                    });
                 });
             }
         }
@@ -370,25 +436,89 @@ public class JavaParserService {
         
         private void detectMethodCalls(MethodDeclaration methodDecl, MethodNode methodNode) {
             // Find all method calls within this method
-            methodDecl.findAll(com.github.javaparser.ast.expr.MethodCallExpr.class).forEach(call -> {
+            methodDecl.findAll(MethodCallExpr.class).forEach(call -> {
                 String calledMethodName = call.getNameAsString();
                 
-                // Look for the called method in current methods or create a placeholder
-                MethodNode calledMethod = currentMethods.stream()
-                    .filter(m -> m.getName().equals(calledMethodName))
-                    .findFirst()
-                    .orElseGet(() -> {
-                        // Create a placeholder method node
-                        MethodNode placeholder = new MethodNode(calledMethodName, currentClass.getName(), packageName, filePath);
-                        graphService.saveMethod(placeholder);
-                        return placeholder;
-                    });
+                // Check if this is a static method call (has a scope like Class.method())
+                if (call.getScope().isPresent()) {
+                    String scopeExpr = call.getScope().get().toString();
+                    LOGGER.debug("Detected method call with scope: {}.{}", scopeExpr, calledMethodName);
+                    
+                    // Check if scope refers to a known imported class
+                    if (importedClasses.containsKey(scopeExpr)) {
+                        String targetClassFQN = importedClasses.get(scopeExpr);
+                        LOGGER.debug("Static method call detected: {}.{} -> {}", scopeExpr, calledMethodName, targetClassFQN);
+                        
+                        // Create or get the target class node
+                        ClassNode targetClass = getOrCreateClassNode(scopeExpr, targetClassFQN);
+                        
+                        // Create USES relationship from current class to target class (static method usage)
+                        if (currentClass != null) {
+                            graphService.createRelationship(
+                                currentClass.getId(), 
+                                targetClass.getId(), 
+                                "USES",
+                                Map.of(
+                                    "type", "static_method_call",
+                                    "method_name", calledMethodName,
+                                    "context", "method:" + methodNode.getName()
+                                )
+                            );
+                            LOGGER.debug("Created USES relationship: {} -> {} (static method call: {})", 
+                                currentClass.getName(), targetClass.getName(), calledMethodName);
+                        }
+                    } else {
+                        // Could be a field reference or other class - try to resolve
+                        LOGGER.debug("Method call scope not in imports: {}.{}", scopeExpr, calledMethodName);
+                    }
+                } else {
+                    // Instance method call within the same class
+                    MethodNode calledMethod = currentMethods.stream()
+                        .filter(m -> m.getName().equals(calledMethodName))
+                        .findFirst()
+                        .orElseGet(() -> {
+                            // Create a placeholder method node
+                            MethodNode placeholder = new MethodNode(calledMethodName, currentClass.getName(), packageName, filePath);
+                            graphService.saveMethod(placeholder);
+                            return placeholder;
+                        });
+                    
+                    // Create CALLS relationship
+                    graphService.createRelationship(methodNode.getId(), calledMethod.getId(), "CALLS");
+                    LOGGER.debug("Created CALLS relationship: {} -> {}", methodNode.getName(), calledMethodName);
+                }
+            });
+            
+            // Find all object instantiations (new expressions) within this method
+            methodDecl.findAll(ObjectCreationExpr.class).forEach(newExpr -> {
+                String className = newExpr.getType().getNameAsString();
+                LOGGER.debug("Detected object instantiation: new {} in method {}", className, methodNode.getName());
                 
-                                       // Create CALLS relationship
-                       graphService.createRelationship(methodNode.getId(), calledMethod.getId(), "CALLS");
-                       LOGGER.debug("Created CALLS relationship: {} -> {}", methodNode.getName(), calledMethodName);
-                   });
-               }
+                // Resolve the class name using imports
+                String fullyQualifiedName = importedClasses.getOrDefault(className, className);
+                
+                // Create or get the instantiated class node
+                ClassNode instantiatedClass = getOrCreateClassNode(className, fullyQualifiedName);
+                
+                // Create USES relationship with instantiation metadata
+                Map<String, Object> relationshipMetadata = Map.of(
+                    "type", "instantiation",
+                    "fullyQualifiedName", fullyQualifiedName,
+                    "context", "method:" + methodNode.getName(),
+                    "isExternal", instantiatedClass.getIsExternal()
+                );
+                
+                graphService.createRelationship(
+                    currentClass.getId(), 
+                    instantiatedClass.getId(), 
+                    "USES", 
+                    relationshipMetadata
+                );
+                
+                LOGGER.debug("Created USES relationship for instantiation: {} -> {} ({})", 
+                           currentClass.getName(), className, fullyQualifiedName);
+            });
+        }
         
         private void detectFieldUsage(MethodDeclaration methodDecl, MethodNode methodNode) {
             // Find all field access expressions within this method
@@ -517,6 +647,89 @@ public class JavaParserService {
         private List<String> getModifiers(com.github.javaparser.ast.body.BodyDeclaration<?> declaration) {
             // For now, return empty list - we'll enhance this later
             return new ArrayList<>();
+        }
+        
+        /**
+         * Extract simple class name from fully qualified name
+         */
+        private String extractSimpleClassName(String fullyQualifiedName) {
+            if (fullyQualifiedName == null || fullyQualifiedName.isEmpty()) {
+                return "";
+            }
+            int lastDotIndex = fullyQualifiedName.lastIndexOf('.');
+            return lastDotIndex >= 0 ? fullyQualifiedName.substring(lastDotIndex + 1) : fullyQualifiedName;
+        }
+        
+        /**
+         * Create or get a class node for dependency tracking
+         */
+        private ClassNode getOrCreateClassNode(String simpleClassName, String fullyQualifiedName) {
+            // Determine package name from fully qualified name
+            String packageName = "";
+            int lastDotIndex = fullyQualifiedName.lastIndexOf('.');
+            if (lastDotIndex > 0) {
+                packageName = fullyQualifiedName.substring(0, lastDotIndex);
+            }
+            
+            // Create class node (will be external/placeholder if not from our codebase)
+            ClassNode classNode = new ClassNode(simpleClassName, packageName, "external");
+            classNode.setFullyQualifiedName(fullyQualifiedName);
+            
+            // Mark as external dependency (we'll refine this logic later)
+            classNode.setIsExternal(isExternalClass(fullyQualifiedName));
+            
+            // Save the class node
+            graphService.saveClass(classNode);
+            LOGGER.debug("Created/retrieved class node for: {}", fullyQualifiedName);
+            
+            return classNode;
+        }
+        
+        /**
+         * Determine if a class is external (from framework/libraries)
+         */
+        private boolean isExternalClass(String fullyQualifiedName) {
+            // Basic heuristic: consider classes external if they're from common frameworks/libraries
+            return fullyQualifiedName.startsWith("java.") ||
+                   fullyQualifiedName.startsWith("javax.") ||
+                   fullyQualifiedName.startsWith("org.springframework.") ||
+                   fullyQualifiedName.startsWith("org.junit.") ||
+                   fullyQualifiedName.startsWith("org.slf4j.");
+        }
+        
+        /**
+         * Create USES relationships for all imported classes from the current class
+         */
+        private void createImportUsesRelationships() {
+            if (currentClass == null || importedClasses.isEmpty()) {
+                return;
+            }
+            
+            for (Map.Entry<String, String> entry : importedClasses.entrySet()) {
+                String className = entry.getKey();
+                String fullyQualifiedName = entry.getValue();
+                
+                // Get or create the imported class node
+                ClassNode importedClass = getOrCreateClassNode(className, fullyQualifiedName);
+                
+                // Create USES relationship with metadata
+                Map<String, Object> relationshipMetadata = Map.of(
+                    "type", "import",
+                    "fullyQualifiedName", fullyQualifiedName,
+                    "context", "class_level",
+                    "isExternal", importedClass.getIsExternal()
+                );
+                
+                graphService.createRelationship(
+                    currentClass.getId(), 
+                    importedClass.getId(), 
+                    "USES", 
+                    relationshipMetadata
+                );
+                
+                LOGGER.debug("Created USES relationship for import: {} -> {} ({})", 
+                           currentClass.getName(), className, fullyQualifiedName);
+            }
         }
     }
     

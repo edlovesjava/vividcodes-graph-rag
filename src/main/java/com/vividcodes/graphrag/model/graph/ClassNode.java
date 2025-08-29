@@ -47,6 +47,9 @@ public class ClassNode {
     @Property("fqn")
     private String fullyQualifiedName;
     
+    @Property("is_external")
+    private Boolean isExternal;
+    
     @Property("repository_id")
     private String repositoryId;
     
@@ -148,6 +151,14 @@ public class ClassNode {
     
     public void setIsAnnotation(Boolean isAnnotation) {
         this.isAnnotation = isAnnotation;
+    }
+    
+    public Boolean getIsExternal() {
+        return isExternal;
+    }
+    
+    public void setIsExternal(Boolean isExternal) {
+        this.isExternal = isExternal;
     }
     
     public String getFilePath() {
