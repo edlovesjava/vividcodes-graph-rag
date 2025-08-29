@@ -137,6 +137,28 @@ class JavaParserServiceIntegrationTest {
             // Mock implementation - return empty map
             return new java.util.HashMap<>();
         }
+        
+        @Override
+        public void saveSubProject(com.vividcodes.graphrag.model.graph.SubProjectNode subProjectNode) {
+            // Mock implementation - do nothing
+        }
+        
+        @Override
+        public com.vividcodes.graphrag.model.graph.SubProjectNode findSubProjectById(String id) {
+            // Mock implementation - return null
+            return null;
+        }
+        
+        @Override
+        public java.util.List<com.vividcodes.graphrag.model.graph.SubProjectNode> findSubProjectsByRepositoryId(String repositoryId) {
+            // Mock implementation - return empty list
+            return new java.util.ArrayList<>();
+        }
+        
+        @Override
+        public void deleteSubProject(String id) {
+            // Mock implementation - do nothing
+        }
     }
     
     /**
@@ -145,7 +167,7 @@ class JavaParserServiceIntegrationTest {
     private static class SimpleMockRepositoryService extends RepositoryService {
         
         public SimpleMockRepositoryService() {
-            super(null, null); // Pass null dependencies for testing
+            super(null, null, null); // Pass null dependencies for testing
         }
         
         @Override

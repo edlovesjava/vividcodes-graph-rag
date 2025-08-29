@@ -19,6 +19,7 @@ import com.vividcodes.graphrag.model.graph.FieldNode;
 import com.vividcodes.graphrag.model.graph.MethodNode;
 import com.vividcodes.graphrag.model.graph.PackageNode;
 import com.vividcodes.graphrag.model.graph.RepositoryNode;
+import com.vividcodes.graphrag.model.graph.SubProjectNode;
 
 @Service
 public class GraphServiceImpl implements GraphService {
@@ -241,6 +242,173 @@ public class GraphServiceImpl implements GraphService {
         } catch (Exception e) {
             LOGGER.error("Error saving repository: {}", repositoryNode.getName(), e);
             throw new RuntimeException("Failed to save repository", e);
+        }
+    }
+    
+    @Override
+    public void saveSubProject(SubProjectNode subProjectNode) {
+        try (Session session = neo4jDriver.session()) {
+            String cypher = """
+                MERGE (sp:SubProject {id: $id})
+                SET sp.name = $name,
+                    sp.path = $path,
+                    sp.type = $type,
+                    sp.buildFile = $buildFile,
+                    sp.sourceDirectories = $sourceDirectories,
+                    sp.testDirectories = $testDirectories,
+                    sp.dependencies = $dependencies,
+                    sp.description = $description,
+                    sp.version = $version,
+                    sp.created_at = $createdAt,
+                    sp.updated_at = $updatedAt,
+                    sp.health_score = $healthScore,
+                    sp.complexity_score = $complexityScore,
+                    sp.maintainability_score = $maintainabilityScore,
+                    sp.repository_id = $repositoryId
+                """;
+            
+            session.run(cypher, Values.parameters(
+                "id", subProjectNode.getId(),
+                "name", subProjectNode.getName(),
+                "path", subProjectNode.getPath(),
+                "type", subProjectNode.getType(),
+                "buildFile", subProjectNode.getBuildFile(),
+                "sourceDirectories", subProjectNode.getSourceDirectories(),
+                "testDirectories", subProjectNode.getTestDirectories(),
+                "dependencies", subProjectNode.getDependencies(),
+                "description", subProjectNode.getDescription(),
+                "version", subProjectNode.getVersion(),
+                "createdAt", subProjectNode.getCreatedAt(),
+                "updatedAt", subProjectNode.getUpdatedAt(),
+                "healthScore", subProjectNode.getHealthScore(),
+                "complexityScore", subProjectNode.getComplexityScore(),
+                "maintainabilityScore", subProjectNode.getMaintainabilityScore(),
+                "repositoryId", subProjectNode.getRepositoryId()
+            ));
+            
+            LOGGER.info("Saved sub-project: {} with ID: {}", subProjectNode.getName(), subProjectNode.getId());
+        } catch (Exception e) {
+            LOGGER.error("Error saving sub-project: {}", subProjectNode.getName(), e);
+            throw new RuntimeException("Failed to save sub-project", e);
+        }
+    }
+    
+    @Override
+    public SubProjectNode findSubProjectById(String id) {
+        try (Session session = neo4jDriver.session()) {
+            String cypher = """
+                MATCH (sp:SubProject {id: $id})
+                RETURN sp
+                """;
+            
+            Result result = session.run(cypher, Values.parameters("id", id));
+            
+            if (result.hasNext()) {
+                Record record = result.next();
+                Value spValue = record.get("sp");
+                
+                SubProjectNode subProject = new SubProjectNode();
+                subProject.setId(spValue.get("id").asString());
+                subProject.setName(spValue.get("name").asString());
+                subProject.setPath(spValue.get("path").asString());
+                subProject.setType(spValue.get("type").asString());
+                
+                if (!spValue.get("buildFile").isNull()) {
+                    subProject.setBuildFile(spValue.get("buildFile").asString());
+                }
+                if (!spValue.get("description").isNull()) {
+                    subProject.setDescription(spValue.get("description").asString());
+                }
+                if (!spValue.get("version").isNull()) {
+                    subProject.setVersion(spValue.get("version").asString());
+                }
+                if (!spValue.get("repository_id").isNull()) {
+                    subProject.setRepositoryId(spValue.get("repository_id").asString());
+                }
+                if (!spValue.get("sourceDirectories").isNull()) {
+                    subProject.setSourceDirectories(spValue.get("sourceDirectories").asList(Value::asString));
+                }
+                if (!spValue.get("testDirectories").isNull()) {
+                    subProject.setTestDirectories(spValue.get("testDirectories").asList(Value::asString));
+                }
+                if (!spValue.get("dependencies").isNull()) {
+                    subProject.setDependencies(spValue.get("dependencies").asList(Value::asString));
+                }
+                
+                LOGGER.debug("Found sub-project: {}", subProject.getName());
+                return subProject;
+            }
+            
+            LOGGER.debug("Sub-project not found with ID: {}", id);
+            return null;
+            
+        } catch (Exception e) {
+            LOGGER.error("Error finding sub-project by ID: {}", id, e);
+            throw new RuntimeException("Failed to find sub-project", e);
+        }
+    }
+    
+    @Override
+    public List<SubProjectNode> findSubProjectsByRepositoryId(String repositoryId) {
+        try (Session session = neo4jDriver.session()) {
+            String cypher = """
+                MATCH (sp:SubProject {repository_id: $repositoryId})
+                RETURN sp
+                ORDER BY sp.name
+                """;
+            
+            Result result = session.run(cypher, Values.parameters("repositoryId", repositoryId));
+            List<SubProjectNode> subProjects = new ArrayList<>();
+            
+            while (result.hasNext()) {
+                Record record = result.next();
+                Value spValue = record.get("sp");
+                
+                SubProjectNode subProject = new SubProjectNode();
+                subProject.setId(spValue.get("id").asString());
+                subProject.setName(spValue.get("name").asString());
+                subProject.setPath(spValue.get("path").asString());
+                subProject.setType(spValue.get("type").asString());
+                
+                if (!spValue.get("buildFile").isNull()) {
+                    subProject.setBuildFile(spValue.get("buildFile").asString());
+                }
+                if (!spValue.get("description").isNull()) {
+                    subProject.setDescription(spValue.get("description").asString());
+                }
+                if (!spValue.get("version").isNull()) {
+                    subProject.setVersion(spValue.get("version").asString());
+                }
+                if (!spValue.get("repository_id").isNull()) {
+                    subProject.setRepositoryId(spValue.get("repository_id").asString());
+                }
+                
+                subProjects.add(subProject);
+            }
+            
+            LOGGER.debug("Found {} sub-projects for repository: {}", subProjects.size(), repositoryId);
+            return subProjects;
+            
+        } catch (Exception e) {
+            LOGGER.error("Error finding sub-projects for repository: {}", repositoryId, e);
+            throw new RuntimeException("Failed to find sub-projects", e);
+        }
+    }
+    
+    @Override
+    public void deleteSubProject(String id) {
+        try (Session session = neo4jDriver.session()) {
+            String cypher = """
+                MATCH (sp:SubProject {id: $id})
+                DETACH DELETE sp
+                """;
+            
+            session.run(cypher, Values.parameters("id", id));
+            LOGGER.info("Deleted sub-project with ID: {}", id);
+            
+        } catch (Exception e) {
+            LOGGER.error("Error deleting sub-project: {}", id, e);
+            throw new RuntimeException("Failed to delete sub-project", e);
         }
     }
     

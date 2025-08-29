@@ -438,5 +438,32 @@ class GraphRelationshipValidationTest {
             // Mock implementation - return empty map
             return new java.util.HashMap<>();
         }
+        
+        @Override
+        public void saveSubProject(com.vividcodes.graphrag.model.graph.SubProjectNode subProjectNode) {
+            // Mock implementation - just validate the node
+            assertNotNull(subProjectNode, "SubProjectNode should not be null");
+            assertNotNull(subProjectNode.getId(), "SubProjectNode ID should not be null");
+        }
+        
+        @Override
+        public com.vividcodes.graphrag.model.graph.SubProjectNode findSubProjectById(String id) {
+            // Mock implementation - return null
+            return null;
+        }
+        
+        @Override
+        public java.util.List<com.vividcodes.graphrag.model.graph.SubProjectNode> findSubProjectsByRepositoryId(String repositoryId) {
+            // Mock implementation - return empty list
+            return new java.util.ArrayList<>();
+        }
+        
+        @Override
+        public void deleteSubProject(String id) {
+            // Mock implementation - validate input
+            if (id == null || id.trim().isEmpty()) {
+                throw new IllegalArgumentException("SubProject ID cannot be null or empty");
+            }
+        }
     }
 } 

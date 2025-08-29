@@ -492,7 +492,7 @@ class GraphRelationshipIntegrationTest {
     private static class SimpleMockRepositoryService extends RepositoryService {
         
         public SimpleMockRepositoryService() {
-            super(null, null); // Pass null dependencies for testing
+            super(null, null, null); // Pass null dependencies for testing
         }
         
         @Override
