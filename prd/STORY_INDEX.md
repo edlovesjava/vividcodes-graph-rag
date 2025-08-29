@@ -115,6 +115,15 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 - **Original File**: `STORY_012_LLM_INTEGRATION.md`
 - **Template Status**: ✅ CONVERTED
 
+#### STORY_013_CLASS_DEPENDENCY_ANALYSIS
+
+- **File**: `STORY_013_CLASS_DEPENDENCY_ANALYSIS.md`
+- **Epic**: Parser Enhancement
+- **Status**: NOT_STARTED
+- **Description**: Enhanced Java parser to capture comprehensive class dependencies through imports, instantiation, and method calls
+- **Original File**: Created as new story
+- **Template Status**: ✅ CONVERTED
+
 ## Epic Mapping
 
 ### Repository Tracking Feature
@@ -148,6 +157,10 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 ### Binary Analysis
 
 - STORY_011_JAR_INGESTION 📋
+
+### Parser Enhancement
+
+- STORY_013_CLASS_DEPENDENCY_ANALYSIS 📋
 
 ## Status Legend
 
@@ -186,6 +199,7 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 - STORY_010_GRAPH_QUERY_NLP
 - STORY_011_JAR_INGESTION
 - STORY_012_LLM_INTEGRATION
+- STORY_013_CLASS_DEPENDENCY_ANALYSIS
 
 ### 📋 Pending Conversion
 
