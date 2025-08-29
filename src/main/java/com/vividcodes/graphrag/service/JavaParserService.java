@@ -26,6 +26,7 @@ import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
 import com.vividcodes.graphrag.model.graph.MethodNode;
 import com.vividcodes.graphrag.model.graph.PackageNode;
+import com.vividcodes.graphrag.model.graph.SubProjectNode;
 import com.vividcodes.graphrag.model.graph.RepositoryNode;
 
 @Service
@@ -165,6 +166,20 @@ public class JavaParserService {
         RepositoryNode repository = repositoryService.createOrUpdateRepository(repoMetadata);
         LOGGER.info("Repository node for {}: {}", filePath, repository != null ? "created/found" : "null");
 
+        // Detect and create sub-projects for this repository
+        List<SubProjectNode> subProjects = List.of(); // Default to empty list
+        if (repository != null) {
+            subProjects = repositoryService.detectAndCreateSubProjects(repository);
+            LOGGER.debug("Found {} sub-projects in repository {}", subProjects.size(), repository.getName());
+        } else {
+            LOGGER.debug("No repository found, skipping sub-project detection");
+        }
+        
+        // Determine which sub-project this Java file belongs to
+        SubProjectNode containingSubProject = findContainingSubProject(filePath, subProjects);
+        LOGGER.debug("Java file {} belongs to sub-project: {}", 
+                    filePath, containingSubProject != null ? containingSubProject.getName() : "none");
+
         ParseResult<CompilationUnit> parseResult = javaParser.parse(filePath.toFile());
         LOGGER.info("Parse result for {}: {}", filePath, parseResult.isSuccessful() ? "successful" : "failed");
         
@@ -175,8 +190,9 @@ public class JavaParserService {
         if (parseResult.isSuccessful() && parseResult.getResult().isPresent()) {
             CompilationUnit cu = parseResult.getResult().get();
             LOGGER.info("Successfully parsed file: {}. CompilationUnit has {} types", filePath, cu.getTypes().size());
-            JavaGraphVisitor visitor = new JavaGraphVisitor(filePath.toString(), repoMetadata);
-            LOGGER.info("Created JavaGraphVisitor for file: {}", filePath);
+            JavaGraphVisitor visitor = new JavaGraphVisitor(filePath.toString(), repoMetadata, containingSubProject);
+            LOGGER.info("Created JavaGraphVisitor for file: {} with sub-project: {}", 
+                       filePath, containingSubProject != null ? containingSubProject.getName() : "none");
             try {
                 visitor.visit(cu, null);
                 LOGGER.info("Visitor visit completed successfully for file: {}", filePath);
@@ -206,15 +222,18 @@ public class JavaParserService {
         
         private final String filePath;
         private final RepositoryMetadata repositoryMetadata;
+        private final SubProjectNode containingSubProject;
         private String packageName = "";
         private ClassNode currentClass;
         private final List<MethodNode> currentMethods = new ArrayList<>();
         private final List<FieldNode> currentFields = new ArrayList<>();
         private final List<Object> createdNodes = new ArrayList<>();
+        private PackageNode currentPackage;
         
-        public JavaGraphVisitor(final String filePath, final RepositoryMetadata repositoryMetadata) {
+        public JavaGraphVisitor(final String filePath, final RepositoryMetadata repositoryMetadata, final SubProjectNode containingSubProject) {
             this.filePath = filePath;
             this.repositoryMetadata = repositoryMetadata;
+            this.containingSubProject = containingSubProject;
         }
 
         @Override
@@ -227,6 +246,7 @@ public class JavaParserService {
             LOGGER.info("Created package node: {} with ID: {}", packageNode.getName(), packageNode.getId());
             graphService.savePackage(packageNode);
             createdNodes.add(packageNode);
+            this.currentPackage = packageNode;  // Set the current package for relationship creation
             LOGGER.info("Added package node to createdNodes list. Total nodes: {}", createdNodes.size());
             
             super.visit(packageDecl, arg);
@@ -312,24 +332,40 @@ public class JavaParserService {
         }
         
         private void createContainsRelationships() {
-                               // Create CONTAINS relationships from class to methods
-                   for (MethodNode method : currentMethods) {
-                       graphService.createRelationship(currentClass.getId(), method.getId(), "CONTAINS");
-                       LOGGER.debug("Created CONTAINS relationship: {} -> {}", currentClass.getName(), method.getName());
-                   }
+            // Create CONTAINS relationships from package to class
+            if (currentPackage != null && currentClass != null) {
+                graphService.createRelationship(currentPackage.getId(), currentClass.getId(), "CONTAINS");
+                LOGGER.debug("Created CONTAINS relationship: package {} -> class {}", currentPackage.getName(), currentClass.getName());
+            }
 
-                   // Create CONTAINS relationships from class to fields
-                   for (FieldNode field : currentFields) {
-                       graphService.createRelationship(currentClass.getId(), field.getId(), "CONTAINS");
-                       LOGGER.debug("Created CONTAINS relationship: {} -> {}", currentClass.getName(), field.getName());
-                   }
-                   
-                   // Create CONTAINS relationship from package to class
-                   if (!packageName.isEmpty()) {
-                       String packageId = "package:" + packageName + ":" + packageName;
-                       graphService.createRelationship(packageId, currentClass.getId(), "CONTAINS");
-                       LOGGER.debug("Created CONTAINS relationship: package {} -> class {}", packageName, currentClass.getName());
-                   }
+            // Create CONTAINS relationships from class to methods
+            for (MethodNode method : currentMethods) {
+                graphService.createRelationship(currentClass.getId(), method.getId(), "CONTAINS");
+                LOGGER.debug("Created CONTAINS relationship: {} -> {}", currentClass.getName(), method.getName());
+            }
+
+            // Create CONTAINS relationships from class to fields
+            for (FieldNode field : currentFields) {
+                graphService.createRelationship(currentClass.getId(), field.getId(), "CONTAINS");
+                LOGGER.debug("Created CONTAINS relationship: {} -> {}", currentClass.getName(), field.getName());
+            }
+            
+            // Create CONTAINS relationships from SubProject to CodeElements (if SubProject exists)
+            if (containingSubProject != null) {
+                // SubProject -> Package
+                if (currentPackage != null) {
+                    graphService.createRelationship(containingSubProject.getId(), currentPackage.getId(), "CONTAINS");
+                    LOGGER.debug("Created CONTAINS relationship: sub-project {} -> package {}", 
+                               containingSubProject.getName(), currentPackage.getName());
+                }
+                
+                // SubProject -> Class (as backup if no package)
+                if (currentClass != null) {
+                    graphService.createRelationship(containingSubProject.getId(), currentClass.getId(), "CONTAINS");
+                    LOGGER.debug("Created CONTAINS relationship: sub-project {} -> class {}", 
+                               containingSubProject.getName(), currentClass.getName());
+                }
+            }
         }
         
         private void detectMethodCalls(MethodDeclaration methodDecl, MethodNode methodNode) {
@@ -400,6 +436,14 @@ public class JavaParserService {
                 classNode.setCommitHash(repositoryMetadata.getCommitHash());
                 classNode.setCommitDate(repositoryMetadata.getCommitDate());
                 classNode.setFileRelativePath(repositoryMetadata.getFileRelativePath());
+            }
+            
+            // Set sub-project context if available
+            if (containingSubProject != null) {
+                // For now, we'll create the relationships instead of storing IDs
+                // TODO: Add subProjectId property to ClassNode in future enhancement
+                LOGGER.debug("Class {} will be linked to sub-project {}", 
+                           classNode.getName(), containingSubProject.getName());
             }
             
             if (classDecl.getBegin().isPresent()) {
@@ -474,5 +518,51 @@ public class JavaParserService {
             // For now, return empty list - we'll enhance this later
             return new ArrayList<>();
         }
+    }
+    
+    /**
+     * Determine which sub-project contains the given Java file
+     * Returns the most specific (longest path) sub-project that contains the file
+     */
+    private SubProjectNode findContainingSubProject(Path javaFilePath, List<SubProjectNode> subProjects) {
+        if (subProjects == null || subProjects.isEmpty()) {
+            LOGGER.debug("No sub-projects found, file {} not contained in any sub-project", javaFilePath);
+            return null;
+        }
+        
+        Path absoluteJavaPath = javaFilePath.toAbsolutePath().normalize();
+        SubProjectNode bestMatch = null;
+        String longestMatchingPath = "";
+        
+        // Find the sub-project with the longest path that still contains the Java file
+        for (SubProjectNode subProject : subProjects) {
+            try {
+                Path subProjectPath = Paths.get(subProject.getPath()).toAbsolutePath().normalize();
+                
+                // Check if the Java file is within this sub-project's directory
+                if (absoluteJavaPath.startsWith(subProjectPath)) {
+                    String subProjectPathStr = subProjectPath.toString();
+                    // If this path is longer (more specific), it's a better match
+                    if (subProjectPathStr.length() > longestMatchingPath.length()) {
+                        bestMatch = subProject;
+                        longestMatchingPath = subProjectPathStr;
+                        LOGGER.debug("File {} found better match in sub-project {} at path {}", 
+                                   javaFilePath, subProject.getName(), subProject.getPath());
+                    }
+                }
+            } catch (Exception e) {
+                LOGGER.warn("Error checking if file {} is in sub-project {}: {}", 
+                           javaFilePath, subProject.getName(), e.getMessage());
+            }
+        }
+        
+        if (bestMatch != null) {
+            LOGGER.debug("File {} is contained in sub-project {} (most specific match)", 
+                       javaFilePath, bestMatch.getName());
+        } else {
+            LOGGER.debug("File {} is not contained in any sub-project", javaFilePath);
+        }
+        
+        return bestMatch;
     }
 } 

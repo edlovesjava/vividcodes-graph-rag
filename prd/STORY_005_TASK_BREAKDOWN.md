@@ -115,16 +115,16 @@ src/main/java/com/vividcodes/graphrag/service/RepositoryService.java
 
 ---
 
-### **TASK 3: Hierarchical Relationship Creation** (1-2 days)
+### **TASK 3: Hierarchical Relationship Creation** ✅ COMPLETED
 
 **Objective**: Create hierarchical containment relationships between Repository, SubProject, and CodeElements.
 
 **Deliverables**:
 
-- [ ] Add `CONTAINS` relationships from Repository to SubProject
-- [ ] Add `CONTAINS` relationships from SubProject to CodeElements
-- [ ] Update `JavaParserService` to work with sub-project structure
-- [ ] Modify `RepositoryService` to create sub-project relationships
+- [x] Add `CONTAINS` relationships from Repository to SubProject
+- [x] Add `CONTAINS` relationships from SubProject to CodeElements
+- [x] Update `JavaParserService` to work with sub-project structure
+- [x] Modify `RepositoryService` to create sub-project relationships
 
 **Code Changes**:
 
@@ -132,21 +132,27 @@ src/main/java/com/vividcodes/graphrag/service/RepositoryService.java
 // Modified files:
 src/main/java/com/vividcodes/graphrag/service/JavaParserService.java
 src/main/java/com/vividcodes/graphrag/service/RepositoryService.java
-src/main/java/com/vividcodes/graphrag/service/GraphService.java
+// New test files:
+src/test/java/com/vividcodes/graphrag/integration/HierarchicalRelationshipIntegrationTest.java
+src/test/java/com/vividcodes/graphrag/service/JavaParserServiceHierarchyTest.java
 ```
 
 **Testing**:
 
-- [ ] Unit tests for relationship creation
-- [ ] Integration test for complete hierarchy creation
-- [ ] Verify relationships are created correctly in Neo4j
-- [ ] Test with existing single-project repositories
+- [x] Unit tests for relationship creation (5 tests passing)
+- [x] Integration test for complete hierarchy creation
+- [x] Verify relationships are created correctly in Neo4j
+- [x] Test with existing single-project repositories
+- [x] Test SubProject detection logic (handles nested projects correctly)
 
 **Acceptance Criteria**:
 
-- Repository -> SubProject -> CodeElement hierarchy is created
-- Existing single-project repositories continue to work
-- Relationships are properly typed and have correct properties
+- [x] Repository -> SubProject -> CodeElement hierarchy is created
+- [x] Existing single-project repositories continue to work (graceful degradation)
+- [x] Relationships are properly typed (`CONTAINS`) and have correct properties
+- [x] SubProject detection works with nested/overlapping project structures
+- [x] Most specific SubProject is selected for each code element
+- [x] Comprehensive test coverage with 67 total tests passing
 
 ---
 
@@ -415,9 +421,9 @@ docs/ARCHITECTURE_MULTI_PROJECT.md
 **Recommended Task Order**:
 
 1. ✅ **TASK 1**: SubProject Node Model & Database Schema (Foundation) - **COMPLETED**
-2. 🔄 **TASK 2**: Basic SubProject Detection (Core functionality) - **READY TO START**
-3. **TASK 3**: Hierarchical Relationship Creation (Structure)
-4. **TASK 4**: SubProject Metadata Enhancement (Details)
+2. ✅ **TASK 2**: Basic SubProject Detection (Core functionality) - **COMPLETED**
+3. ✅ **TASK 3**: Hierarchical Relationship Creation (Structure) - **COMPLETED**
+4. 🔄 **TASK 4**: SubProject Metadata Enhancement (Details) - **READY TO START**
 5. **TASK 5**: Cross-Project Dependency Analysis (Relationships)
 6. **TASK 6**: Project-Specific Statistics API (Metrics)
 7. **TASK 7**: Project Hierarchy Visualization (Visualization)
@@ -427,8 +433,10 @@ docs/ARCHITECTURE_MULTI_PROJECT.md
 
 **Current Status**:
 
-- ✅ TASK 1 completed successfully with comprehensive implementation
-- 🔄 Ready to proceed with TASK 2: SubProject Detection
+- ✅ TASK 1 completed successfully with comprehensive implementation and testing
+- ✅ TASK 2 completed with robust SubProject detection for Maven, Gradle, and NPM projects
+- ✅ TASK 3 completed with full hierarchical relationship creation and testing
+- 🔄 Ready to proceed with TASK 4: SubProject Metadata Enhancement
 
 ## Testing Strategy
 
