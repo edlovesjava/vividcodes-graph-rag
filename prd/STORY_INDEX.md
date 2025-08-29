@@ -88,6 +88,24 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 - **Original File**: `PHASE2_GRAPH_QUERY_ENGINE_STORY.md`
 - **Template Status**: ✅ CONVERTED
 
+#### STORY_010_GRAPH_QUERY_NLP
+
+- **File**: `STORY_010_GRAPH_QUERY_NLP.md`
+- **Epic**: LLM Integration
+- **Status**: NOT_STARTED
+- **Description**: Full LLM integration with advanced features
+- **Original File**: `PHASE3_LLM_INTEGRATION_STORY.md`
+- **Template Status**: ✅ CONVERTED
+
+#### STORY_011_JAR_INGESTION
+
+- **File**: `STORY_011_JAR_INGESTION.md`
+- **Epic**: Binary Analysis
+- **Status**: NOT_STARTED
+- **Description**: JAR file ingestion and bytecode analysis capabilities
+- **Original File**: Created as new story
+- **Template Status**: ✅ CONVERTED
+
 #### STORY_012_LLM_INTEGRATION
 
 - **File**: `STORY_012_LLM_INTEGRATION.md`
@@ -95,15 +113,6 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 - **Status**: NOT_STARTED
 - **Description**: Comprehensive LLM integration with AI-powered code analysis
 - **Original File**: `STORY_012_LLM_INTEGRATION.md`
-- **Template Status**: ✅ CONVERTED
-
-### StORY_010_GRAPH_QUERY_NLP
-
-- **File**: `STORY_010_GRAPH_QUERY_NLP.md`
-- **Epic**: LLM Integration
-- **Status**: NOT_STARTED
-- **Description**: Full LLM integration with advanced features
-- **Original File**: `PHASE3_LLM_INTEGRATION_STORY.md`
 - **Template Status**: ✅ CONVERTED
 
 ## Epic Mapping
@@ -129,11 +138,16 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 
 ### LLM Integration
 
+- STORY_010_GRAPH_QUERY_NLP 📋
 - STORY_012_LLM_INTEGRATION 📋
 
 ### Agent Integration
 
 - STORY_006_MCP_INTEGRATION 📋
+
+### Binary Analysis
+
+- STORY_011_JAR_INGESTION 📋
 
 ## Status Legend
 
@@ -169,6 +183,8 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 - STORY_005_MULTI_PROJECT_REPOSITORY_SUPPORT
 - STORY_007_UPSERT_PATTERN_IMPORT
 - STORY_008_GRAPH_QUERY_ENGINE
+- STORY_010_GRAPH_QUERY_NLP
+- STORY_011_JAR_INGESTION
 - STORY_012_LLM_INTEGRATION
 
 ### 📋 Pending Conversion
