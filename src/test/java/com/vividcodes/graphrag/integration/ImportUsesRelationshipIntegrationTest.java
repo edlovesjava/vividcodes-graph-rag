@@ -54,6 +54,7 @@ public class ImportUsesRelationshipIntegrationTest {
             public class MyService {
                 private Logger logger = LoggerFactory.getLogger(MyService.class);
                 private List<String> items = new ArrayList<>();
+                private DateTimeFormatter formatter;
                 
                 public void doSomething() {
                     logger.info("Doing something");

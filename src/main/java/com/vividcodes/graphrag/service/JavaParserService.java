@@ -22,9 +22,8 @@ import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
-import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
-
+import com.github.javaparser.ast.expr.ObjectCreationExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.vividcodes.graphrag.config.ParserConfig;
 import com.vividcodes.graphrag.model.dto.RepositoryMetadata;
@@ -393,6 +392,9 @@ public class JavaParserService {
                                        currentClass.getName(), className, fullyQualifiedName);
                         });
                     });
+                    
+                    // Detect field type dependencies
+                    detectFieldTypeDependencies(variable, fieldDecl);
                 });
             }
         }
@@ -730,6 +732,87 @@ public class JavaParserService {
                 LOGGER.debug("Created USES relationship for import: {} -> {} ({})", 
                            currentClass.getName(), className, fullyQualifiedName);
             }
+        }
+        
+        /**
+         * Detect field type dependencies (e.g., private Logger logger creates dependency on Logger class)
+         */
+        private void detectFieldTypeDependencies(com.github.javaparser.ast.body.VariableDeclarator variable, FieldDeclaration fieldDecl) {
+            String fieldName = variable.getNameAsString();
+            String fieldTypeName = fieldDecl.getElementType().toString();
+            
+            // Extract simple type name (remove generics, arrays, etc.)
+            String simpleTypeName = extractSimpleTypeName(fieldTypeName);
+            
+            // Skip primitive types
+            if (isPrimitiveType(simpleTypeName)) {
+                LOGGER.debug("Skipping primitive field type: {} for field {}", simpleTypeName, fieldName);
+                return;
+            }
+            
+            LOGGER.debug("Detected field type dependency: field {} has type {}", fieldName, simpleTypeName);
+            
+            // Resolve the class name using imports
+            String fullyQualifiedName = importedClasses.getOrDefault(simpleTypeName, simpleTypeName);
+            
+            // Create or get the field type class node
+            ClassNode fieldTypeClass = getOrCreateClassNode(simpleTypeName, fullyQualifiedName);
+            
+            // Create USES relationship with field type metadata
+            if (currentClass != null) {
+                Map<String, Object> relationshipMetadata = Map.of(
+                    "type", "field_type",
+                    "field_name", fieldName,
+                    "field_type", fieldTypeName,
+                    "context", "field_declaration",
+                    "isExternal", fieldTypeClass.getIsExternal()
+                );
+                
+                graphService.createRelationship(
+                    currentClass.getId(), 
+                    fieldTypeClass.getId(), 
+                    "USES", 
+                    relationshipMetadata
+                );
+                
+                LOGGER.debug("Created USES relationship for field type: {} -> {} (field: {} type: {})", 
+                           currentClass.getName(), simpleTypeName, fieldName, fieldTypeName);
+            }
+        }
+        
+        /**
+         * Extract simple type name from complex type declarations
+         */
+        private String extractSimpleTypeName(String typeDeclaration) {
+            if (typeDeclaration == null || typeDeclaration.isEmpty()) {
+                return "";
+            }
+            
+            // Remove array brackets
+            String cleaned = typeDeclaration.replaceAll("\\[\\]", "");
+            
+            // Extract the base type before any generics (e.g., List<String> -> List)
+            int genericStart = cleaned.indexOf('<');
+            if (genericStart >= 0) {
+                cleaned = cleaned.substring(0, genericStart);
+            }
+            
+            // Remove any package qualifier if present (e.g., java.util.List -> List)
+            int lastDot = cleaned.lastIndexOf('.');
+            if (lastDot >= 0) {
+                cleaned = cleaned.substring(lastDot + 1);
+            }
+            
+            return cleaned.trim();
+        }
+        
+        /**
+         * Check if a type name represents a primitive type
+         */
+        private boolean isPrimitiveType(String typeName) {
+            return typeName.equals("int") || typeName.equals("long") || typeName.equals("double") || 
+                   typeName.equals("float") || typeName.equals("boolean") || typeName.equals("char") || 
+                   typeName.equals("byte") || typeName.equals("short") || typeName.equals("void");
         }
     }
     
