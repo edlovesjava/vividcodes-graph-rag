@@ -187,7 +187,7 @@ src/test/java/com/vividcodes/graphrag/service/SubProjectDetectorTest.java - Adde
 **Acceptance Criteria**:
 
 - [x] Build files are correctly identified and stored
-- [x] Source and test directories are detected  
+- [x] Source and test directories are detected
 - [x] Project versions are extracted from build files (Maven POM, Gradle build.gradle, NPM package.json)
 - [x] Project descriptions are extracted when available
 - [x] Dependencies are extracted and stored as lists
@@ -206,6 +206,7 @@ src/test/java/com/vividcodes/graphrag/service/SubProjectDetectorTest.java - Adde
 - ✅ **Testing**: 22 comprehensive test methods covering all parsing scenarios, error conditions, and integration
 
 **Enhanced Features Delivered**:
+
 - **Version Extraction**: Supports direct version, Maven parent inheritance, Gradle properties, NPM semver
 - **Description Extraction**: Full text descriptions from all build file types with fallbacks
 - **Dependency Analysis**: Comprehensive dependency lists with scope information (Maven test scope, Gradle implementation/api/testImplementation, NPM dev dependencies)

@@ -535,14 +535,25 @@ public class SubProjectDetector {
     private List<String> extractGradleDependencies(final String content) {
         List<String> dependencies = new ArrayList<>();
         
-        // Simple regex to find implementation/compile dependencies
-        String pattern = "(implementation|compile|api|testImplementation)\\s+['\"]([^'\"]+)['\"]";
-        java.util.regex.Pattern regex = java.util.regex.Pattern.compile(pattern);
-        java.util.regex.Matcher matcher = regex.matcher(content);
+        // Pattern for Groovy DSL: implementation 'group:artifact:version'
+        String groovyPattern = "(implementation|compile|api|testImplementation|compileOnly|runtimeOnly|annotationProcessor)\\s+['\"]([^'\"]+)['\"]";
+        java.util.regex.Pattern groovyRegex = java.util.regex.Pattern.compile(groovyPattern);
+        java.util.regex.Matcher groovyMatcher = groovyRegex.matcher(content);
         
-        while (matcher.find()) {
-            String scope = matcher.group(1);
-            String dependency = matcher.group(2);
+        while (groovyMatcher.find()) {
+            String scope = groovyMatcher.group(1);
+            String dependency = groovyMatcher.group(2);
+            dependencies.add(dependency + " (" + scope + ")");
+        }
+        
+        // Pattern for Kotlin DSL: implementation("group:artifact:version")
+        String kotlinPattern = "(implementation|compile|api|testImplementation|compileOnly|runtimeOnly|annotationProcessor)\\s*\\(\\s*['\"]([^'\"]+)['\"]";
+        java.util.regex.Pattern kotlinRegex = java.util.regex.Pattern.compile(kotlinPattern);
+        java.util.regex.Matcher kotlinMatcher = kotlinRegex.matcher(content);
+        
+        while (kotlinMatcher.find()) {
+            String scope = kotlinMatcher.group(1);
+            String dependency = kotlinMatcher.group(2);
             dependencies.add(dependency + " (" + scope + ")");
         }
         

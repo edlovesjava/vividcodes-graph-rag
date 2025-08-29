@@ -644,4 +644,49 @@ class SubProjectDetectorTest {
         assertTrue(project.getTestDirectories().contains("src/test/java"));
         assertTrue(project.getTestDirectories().contains("src/test/groovy"));
     }
+    
+    @Test
+    void testParseGradleMetadata_KotlinDSL() throws IOException {
+        // Create Kotlin DSL build.gradle.kts with dependencies
+        String kotlinGradleContent = """
+            plugins {
+                java
+                `maven-publish`
+                id("org.springframework.boot") version "2.3.0.RELEASE"
+            }
+            
+            version = "1.5.2"
+            description = "Kotlin DSL Gradle project for testing"
+            
+            dependencies {
+                implementation("org.springframework.boot:spring-boot-starter-web")
+                testImplementation("org.junit.jupiter:junit-jupiter:5.9.2")
+                compileOnly("org.projectlombok:lombok:1.18.30")
+                annotationProcessor("org.projectlombok:lombok:1.18.30")
+                api("com.fasterxml.jackson.core:jackson-core:2.15.0")
+                runtimeOnly("mysql:mysql-connector-java:8.0.32")
+            }
+            """;
+        
+        Files.writeString(tempDir.resolve("build.gradle.kts"), kotlinGradleContent);
+        
+        List<SubProjectMetadata> projects = detector.detectSubProjects(tempDir.toString(), "test-repo");
+        
+        assertEquals(1, projects.size());
+        SubProjectMetadata project = projects.get(0);
+        
+        // Verify enhanced metadata from Kotlin DSL
+        assertEquals("1.5.2", project.getVersion());
+        assertEquals("Kotlin DSL Gradle project for testing", project.getDescription());
+        assertNotNull(project.getDependencies());
+        assertEquals(6, project.getDependencies().size());
+        
+        // Check specific Kotlin DSL dependencies
+        assertTrue(project.getDependencies().contains("org.springframework.boot:spring-boot-starter-web (implementation)"));
+        assertTrue(project.getDependencies().contains("org.junit.jupiter:junit-jupiter:5.9.2 (testImplementation)"));
+        assertTrue(project.getDependencies().contains("org.projectlombok:lombok:1.18.30 (compileOnly)"));
+        assertTrue(project.getDependencies().contains("org.projectlombok:lombok:1.18.30 (annotationProcessor)"));
+        assertTrue(project.getDependencies().contains("com.fasterxml.jackson.core:jackson-core:2.15.0 (api)"));
+        assertTrue(project.getDependencies().contains("mysql:mysql-connector-java:8.0.32 (runtimeOnly)"));
+    }
 }
