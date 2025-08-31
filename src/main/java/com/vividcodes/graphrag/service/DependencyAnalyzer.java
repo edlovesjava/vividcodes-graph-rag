@@ -177,7 +177,7 @@ public class DependencyAnalyzer {
         LOGGER.debug("Detected field type dependency: field {} has type {}", fieldName, simpleTypeName);
 
         // Resolve the fully qualified name
-        final String fullyQualifiedName = resolveClassName(simpleTypeName, importedClasses);
+        final String fullyQualifiedName = typeResolver.resolveClassName(simpleTypeName, importedClasses);
 
         // Create or get the class node for the field type
         final ClassNode fieldTypeClass = getOrCreateClassNode(simpleTypeName, fullyQualifiedName);
