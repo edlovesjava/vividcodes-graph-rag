@@ -4,13 +4,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
-
 import com.github.javaparser.ast.ImportDeclaration;
 import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -164,7 +162,7 @@ public class JavaGraphVisitor extends VoidVisitorAdapter<Void> {
                 if (classDecl.getExtendedTypes().isNonEmpty()) {
                     classDecl.getExtendedTypes().forEach(extendedType -> {
                         final String parentClassName = extendedType.getNameAsString();
-                        final String parentFQN = resolveClassName(parentClassName);
+                        final String parentFQN = typeResolver.resolveClassName(parentClassName, importedClasses);
                         final ClassNode parentClass = nodeFactory.createExternalClassNode(parentClassName, parentFQN, graphService);
                         relationshipManager.createInheritanceRelationship(currentClass, parentClass, "EXTENDS");
                     });
@@ -174,7 +172,7 @@ public class JavaGraphVisitor extends VoidVisitorAdapter<Void> {
                 if (classDecl.getImplementedTypes().isNonEmpty()) {
                     classDecl.getImplementedTypes().forEach(implementedType -> {
                         final String interfaceName = implementedType.getNameAsString();
-                        final String interfaceFQN = resolveClassName(interfaceName);
+                        final String interfaceFQN = typeResolver.resolveClassName(interfaceName, importedClasses);
                         final ClassNode interfaceClass = nodeFactory.createExternalClassNode(interfaceName, interfaceFQN, graphService);
                         relationshipManager.createInheritanceRelationship(currentClass, interfaceClass, "IMPLEMENTS");
                     });
@@ -225,7 +223,7 @@ public class JavaGraphVisitor extends VoidVisitorAdapter<Void> {
                 if (variable.getInitializer().isPresent()) {
                     variable.getInitializer().get().findAll(ObjectCreationExpr.class).forEach(newExpr -> {
                         final String className = newExpr.getType().getNameAsString();
-                        final String fullyQualifiedName = resolveClassName(className);
+                        final String fullyQualifiedName = typeResolver.resolveClassName(className, importedClasses);
                         
                         LOGGER.debug("Detected object instantiation: {} in field: {}", className, fieldName);
                         
@@ -270,15 +268,7 @@ public class JavaGraphVisitor extends VoidVisitorAdapter<Void> {
         });
     }
 
-    /**
-     * Resolve a class name to its fully qualified name using imports.
-     * 
-     * @param className The simple class name
-     * @return The fully qualified name, or the simple name if not found in imports
-     */
-    private String resolveClassName(final String className) {
-        return importedClasses.getOrDefault(className, className);
-    }
+
 
     /**
      * Get the list of nodes created during this parsing operation.

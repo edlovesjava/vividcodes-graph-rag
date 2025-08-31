@@ -2,18 +2,15 @@ package com.vividcodes.graphrag.integration;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
-
 import com.vividcodes.graphrag.service.GraphService;
 import com.vividcodes.graphrag.service.JavaParserService;
 
@@ -63,6 +60,14 @@ public class ImportUsesRelationshipIntegrationTest {
                     Collections.sort(items);
                     String now = LocalDateTime.now().format(DateTimeFormatter.ISO_LOCAL_DATE_TIME);
                     System.out.println("Current time: " + now);
+                }
+                
+                // Method with parameters and return type for signature dependency testing
+                public List<String> processItems(List<String> inputItems, DateTimeFormatter formatter) {
+                    // This method demonstrates parameter and return type dependencies
+                    List<String> result = new ArrayList<>(inputItems);
+                    result.add("processed at: " + LocalDateTime.now().format(formatter));
+                    return result;
                 }
             }
             """;

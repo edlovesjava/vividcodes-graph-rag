@@ -3,10 +3,8 @@ package com.vividcodes.graphrag.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
@@ -15,6 +13,7 @@ import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
 import com.vividcodes.graphrag.model.graph.MethodNode;
 import com.vividcodes.graphrag.model.graph.SubProjectNode;
+
 
 /**
  * Factory service for creating graph nodes from JavaParser AST elements.

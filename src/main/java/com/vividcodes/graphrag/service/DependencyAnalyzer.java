@@ -1,12 +1,10 @@
 package com.vividcodes.graphrag.service;
 
 import java.util.Map;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
-
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -134,8 +132,8 @@ public class DependencyAnalyzer {
             final String className = newExpr.getType().getNameAsString();
             LOGGER.debug("Detected object instantiation: new {} in method {}", className, methodNode.getName());
 
-            // Resolve the fully qualified name
-            final String fullyQualifiedName = resolveClassName(className, importedClasses);
+                    // Resolve the fully qualified name
+        final String fullyQualifiedName = typeResolver.resolveClassName(className, importedClasses);
 
             // Create or get the class node
             final ClassNode targetClass = getOrCreateClassNode(className, fullyQualifiedName);
@@ -217,7 +215,7 @@ public class DependencyAnalyzer {
             LOGGER.debug("Detected return type dependency: method {} returns {}", methodName, simpleReturnType);
 
             // Resolve the fully qualified name
-            final String fullyQualifiedName = resolveClassName(simpleReturnType, importedClasses);
+            final String fullyQualifiedName = typeResolver.resolveClassName(simpleReturnType, importedClasses);
 
             // Create or get the class node for the return type
             final ClassNode returnTypeClass = getOrCreateClassNode(simpleReturnType, fullyQualifiedName);
@@ -240,7 +238,7 @@ public class DependencyAnalyzer {
                            methodName, paramName, simpleParamType);
 
                 // Resolve the fully qualified name
-                final String fullyQualifiedName = resolveClassName(simpleParamType, importedClasses);
+                final String fullyQualifiedName = typeResolver.resolveClassName(simpleParamType, importedClasses);
 
                 // Create or get the class node for the parameter type
                 final ClassNode paramTypeClass = getOrCreateClassNode(simpleParamType, fullyQualifiedName);
@@ -255,16 +253,7 @@ public class DependencyAnalyzer {
         });
     }
 
-    /**
-     * Resolve a class name to its fully qualified name using imports.
-     * 
-     * @param className The simple class name
-     * @param importedClasses Map of imported classes
-     * @return The fully qualified name, or the simple name if not found in imports
-     */
-    private String resolveClassName(final String className, final Map<String, String> importedClasses) {
-        return importedClasses.getOrDefault(className, className);
-    }
+
 
     /**
      * Get or create a ClassNode for a given class name.

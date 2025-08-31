@@ -112,4 +112,15 @@ public class TypeResolver {
         return trimmed.matches("^[a-zA-Z_][a-zA-Z0-9_.]*[a-zA-Z0-9_]$") ||
                trimmed.matches("^[a-zA-Z_][a-zA-Z0-9_]*$"); // Single word class names
     }
+
+    /**
+     * Resolve a class name to its fully qualified name using imports.
+     * 
+     * @param className The simple class name
+     * @param importedClasses Map of imported classes (className -> fullyQualifiedName)
+     * @return The fully qualified name, or the simple name if not found in imports
+     */
+    public String resolveClassName(final String className, final java.util.Map<String, String> importedClasses) {
+        return importedClasses.getOrDefault(className, className);
+    }
 }

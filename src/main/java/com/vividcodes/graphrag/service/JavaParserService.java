@@ -8,13 +8,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.stereotype.Service;
-
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
@@ -118,7 +116,16 @@ public class JavaParserService {
      * @return true if the file should be included, false otherwise
      */
     private boolean shouldIncludeFile(final Path filePath) {
-        final String fileName = filePath.getFileName().toString();
+        if (filePath == null) {
+            return false;
+        }
+        
+        final Path fileNamePath = filePath.getFileName();
+        if (fileNamePath == null) {
+            return false;
+        }
+        
+        final String fileName = fileNamePath.toString();
         
         LOGGER.debug("Checking file: {} (fileName: {})", filePath, fileName);
         
