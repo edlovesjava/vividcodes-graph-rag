@@ -217,41 +217,231 @@ src/test/java/com/vividcodes/graphrag/service/SubProjectDetectorTest.java - Adde
 
 ### **TASK 5: Cross-Project Dependency Analysis** (2 days)
 
-**Objective**: Implement cross-project dependency detection and analysis.
+**Objective**: Implement cross-project dependency detection and analysis with comprehensive relationship types.
+
+## **Cross-Project Relationship Types Specification**
+
+### **1. DEPENDS_ON Relationships**
+
+#### **SubProject → SubProject (PRIMARY)**
+```cypher
+(:SubProject)-[:DEPENDS_ON {
+  strength: "high|medium|low",
+  classCount: Integer,
+  relationshipCount: Integer,
+  dependencyTypes: ["USES", "EXTENDS", "IMPLEMENTS"],
+  created_at: DateTime,
+  updated_at: DateTime
+}]->(:SubProject)
+```
+
+**When to Apply**:
+- Classes in SubProject A import/use classes from SubProject B
+- SubProject A references build artifacts from SubProject B
+- SubProject A has explicit build dependencies on SubProject B
+
+**Strength Calculation**:
+- **High**: >20 class relationships OR >50 total relationships
+- **Medium**: 5-20 class relationships OR 10-50 total relationships  
+- **Low**: <5 class relationships OR <10 total relationships
+
+**Detection Logic**:
+```cypher
+MATCH (source_sp:SubProject)-[:CONTAINS]->(source_class:Class)
+MATCH (target_sp:SubProject)-[:CONTAINS]->(target_class:Class)
+MATCH (source_class)-[r:USES|EXTENDS|IMPLEMENTS]->(target_class)
+WHERE source_sp <> target_sp
+WITH source_sp, target_sp, 
+     count(DISTINCT source_class) as classCount,
+     count(r) as relationshipCount,
+     collect(DISTINCT type(r)) as dependencyTypes
+WHERE relationshipCount > 0
+CREATE (source_sp)-[:DEPENDS_ON {
+  strength: CASE 
+    WHEN relationshipCount > 50 OR classCount > 20 THEN "high"
+    WHEN relationshipCount > 10 OR classCount > 5 THEN "medium"
+    ELSE "low"
+  END,
+  classCount: classCount,
+  relationshipCount: relationshipCount,
+  dependencyTypes: dependencyTypes,
+  created_at: datetime()
+}]->(target_sp)
+```
+
+#### **Package → Package (CROSS-PROJECT)**
+```cypher
+(:Package)-[:DEPENDS_ON {
+  strength: "high|medium|low",
+  classCount: Integer,
+  relationshipCount: Integer,
+  created_at: DateTime
+}]->(:Package)
+```
+
+**When to Apply**: Only for packages in different SubProjects with class dependencies
+
+### **2. SHARES_WITH Relationships**
+
+#### **SubProject ↔ SubProject (BIDIRECTIONAL)**
+```cypher
+(:SubProject)-[:SHARES_WITH {
+  sharedClasses: Integer,
+  sharedPackages: Integer,
+  sharedInterfaces: Integer,
+  commonDependencies: [String],
+  similarity_score: Float,  // 0.0 - 1.0
+  created_at: DateTime
+}]->(:SubProject)
+```
+
+**When to Apply**:
+- SubProjects use common external libraries (same JAR dependencies)
+- SubProjects share similar package structures
+- SubProjects have bidirectional class relationships
+- SubProjects implement similar interfaces or extend common base classes
+
+**Similarity Score Calculation**:
+```cypher
+// Based on shared external dependencies and common patterns
+WITH sp1, sp2,
+     size(sp1_external_deps INTERSECTION sp2_external_deps) as shared_deps,
+     size(sp1_external_deps UNION sp2_external_deps) as total_deps,
+     bidirectional_relationships
+SET similarity_score = (shared_deps * 1.0) / total_deps + 
+                      (bidirectional_relationships * 0.1)
+```
+
+#### **Package ↔ Package (BIDIRECTIONAL)**
+```cypher
+(:Package)-[:SHARES_WITH {
+  sharedClasses: Integer,
+  commonInterfaces: Integer,
+  similarity_score: Float,
+  created_at: DateTime
+}]->(:Package)
+```
+
+**When to Apply**: Packages with bidirectional dependencies or shared interface implementations
+
+### **3. IMPORTS_FROM Relationships**
+
+#### **SubProject → SubProject (DIRECTIONAL)**
+```cypher
+(:SubProject)-[:IMPORTS_FROM {
+  importCount: Integer,
+  importedClasses: [String],
+  importedPackages: [String],
+  import_intensity: "heavy|moderate|light",
+  created_at: DateTime
+}]->(:SubProject)
+```
+
+**When to Apply**:
+- SubProject A imports classes from SubProject B (based on Java import statements)
+- More specific than DEPENDS_ON, focuses on explicit import relationships
+- Tracks actual import statements rather than usage relationships
+
+**Import Intensity Calculation**:
+- **Heavy**: >50 imported classes OR >10 imported packages
+- **Moderate**: 10-50 imported classes OR 3-10 imported packages
+- **Light**: <10 imported classes OR <3 imported packages
+
+**Detection Logic**:
+```cypher
+MATCH (source_sp:SubProject)-[:CONTAINS]->(source_class:Class)
+MATCH (target_sp:SubProject)-[:CONTAINS]->(target_class:Class)
+MATCH (source_class)-[:USES {relationship_type: "IMPORT"}]->(target_class)
+WHERE source_sp <> target_sp
+WITH source_sp, target_sp,
+     count(DISTINCT target_class) as importCount,
+     collect(DISTINCT target_class.name) as importedClasses,
+     collect(DISTINCT target_class.package_name) as importedPackages
+CREATE (source_sp)-[:IMPORTS_FROM {
+  importCount: importCount,
+  importedClasses: importedClasses[0..20], // Limit array size
+  importedPackages: importedPackages,
+  import_intensity: CASE
+    WHEN importCount > 50 OR size(importedPackages) > 10 THEN "heavy"
+    WHEN importCount > 10 OR size(importedPackages) > 3 THEN "moderate"
+    ELSE "light"
+  END,
+  created_at: datetime()
+}]->(target_sp)
+```
+
+#### **Class → Class (IMPORT-SPECIFIC)**
+```cypher
+(:Class)-[:IMPORTS_FROM {
+  import_type: "direct|static|wildcard",
+  created_at: DateTime
+}]->(:Class)
+```
+
+**When to Apply**: Track specific import statement types between classes
+
+## **Implementation Strategy**
+
+### **Phase 1: Core DEPENDS_ON (Week 1)**
+- Implement SubProject → SubProject DEPENDS_ON relationships
+- Focus on aggregating existing USES/EXTENDS/IMPLEMENTS relationships
+- Add strength calculation and metadata
+
+### **Phase 2: SHARES_WITH Analysis (Week 1)**
+- Implement bidirectional SHARES_WITH relationships
+- Analyze common dependencies and patterns
+- Calculate similarity scores
+
+### **Phase 3: IMPORTS_FROM Tracking (Week 2)**
+- Enhance JavaParser to track import statements specifically
+- Create IMPORTS_FROM relationships based on actual imports
+- Add import intensity analysis
 
 **Deliverables**:
 
-- [ ] Create `CrossProjectAnalysisService`
-- [ ] Implement dependency relationship detection
-- [ ] Add `DEPENDS_ON` relationships between sub-projects
-- [ ] Add `SHARES_WITH` relationships for shared code
-- [ ] Add `IMPORTS_FROM` relationships for imports
+- [ ] Create `CrossProjectAnalysisService` with all relationship types
+- [ ] Implement DEPENDS_ON relationship detection and creation
+- [ ] Implement SHARES_WITH relationship analysis
+- [ ] Implement IMPORTS_FROM relationship tracking
+- [ ] Add relationship strength/intensity calculations
+- [ ] Add circular dependency detection
+- [ ] Add relationship metadata and timestamps
 
 **Code Changes**:
 
 ```java
 // New files to create:
 src/main/java/com/vividcodes/graphrag/service/CrossProjectAnalysisService.java
+src/main/java/com/vividcodes/graphrag/model/CrossProjectRelationship.java
+src/main/java/com/vividcodes/graphrag/model/DependencyStrength.java
 
 // Modified files:
-src/main/java/com/vividcodes/graphrag/service/JavaParserService.java
-src/main/java/com/vividcodes/graphrag/service/GraphService.java
+src/main/java/com/vividcodes/graphrag/service/JavaParserService.java  // Import tracking
+src/main/java/com/vividcodes/graphrag/service/GraphService.java        // New relationship methods
+src/main/java/com/vividcodes/graphrag/service/GraphServiceImpl.java    // Implementation
+src/main/java/com/vividcodes/graphrag/service/RepositoryService.java   // Integration
 ```
 
 **Testing**:
 
-- [ ] Unit tests for dependency detection
-- [ ] Unit tests for shared code detection
-- [ ] Unit tests for import analysis
-- [ ] Integration test with multi-project repository
-- [ ] Test circular dependency detection
+- [ ] Unit tests for DEPENDS_ON relationship detection and strength calculation
+- [ ] Unit tests for SHARES_WITH relationship analysis and similarity scoring
+- [ ] Unit tests for IMPORTS_FROM relationship tracking and intensity calculation
+- [ ] Unit tests for circular dependency detection across all relationship types
+- [ ] Integration test with multi-project repository (catalog-service)
+- [ ] Performance tests for relationship creation with large codebases
+- [ ] Edge case tests (self-dependencies, missing SubProjects, etc.)
 
 **Acceptance Criteria**:
 
-- Cross-project dependencies are correctly identified
-- Shared code relationships are created
-- Import relationships are tracked
-- Circular dependencies are detected and reported
+- [ ] DEPENDS_ON relationships correctly aggregate class-level dependencies with accurate strength calculation
+- [ ] SHARES_WITH relationships identify bidirectional dependencies and common patterns with similarity scores
+- [ ] IMPORTS_FROM relationships track actual import statements with intensity analysis
+- [ ] All relationships include comprehensive metadata (counts, types, timestamps)
+- [ ] Circular dependencies are detected and reported across all relationship types
+- [ ] Performance is acceptable for repositories with 10+ SubProjects
+- [ ] Relationship creation is idempotent (can be run multiple times safely)
+- [ ] Integration with existing ingestion workflow is seamless
 
 ---
 
