@@ -156,6 +156,7 @@ The system captures five types of class dependencies through `USES` relationship
 5. **Field Type Dependencies** (`type: "field_type"`) - Classes used as field types
 
 Each `USES` relationship includes rich metadata:
+
 - `type`: The type of dependency (import, instantiation, etc.)
 - `context`: Where the dependency occurs (method name, field name, etc.)
 - `fullyQualifiedName`: Full class name for external dependencies
@@ -304,14 +305,14 @@ ORDER BY class1, class2
 // Analyze dependencies between architectural layers
 MATCH (source:Class)-[r:USES]->(target:Class)
 WHERE source.name CONTAINS "Controller" OR source.name CONTAINS "Service" OR source.name CONTAINS "Repository"
-RETURN 
-  CASE 
+RETURN
+  CASE
     WHEN source.name CONTAINS "Controller" THEN "Controller"
     WHEN source.name CONTAINS "Service" THEN "Service"
     WHEN source.name CONTAINS "Repository" THEN "Repository"
     ELSE "Other"
   END as sourceLayer,
-  CASE 
+  CASE
     WHEN target.name CONTAINS "Controller" THEN "Controller"
     WHEN target.name CONTAINS "Service" THEN "Service"
     WHEN target.name CONTAINS "Repository" THEN "Repository"

@@ -3,6 +3,7 @@
 ## 🎯 **Current Status: 85% COMPLETE**
 
 ### ✅ **COMPLETED FEATURES:**
+
 - **Core Dependency Detection**: Import statements, object instantiation, static method calls
 - **Advanced Analysis**: Field type dependencies, method parameter/return type analysis
 - **External Class Support**: Placeholder nodes for framework/library classes
@@ -12,11 +13,13 @@
 - **Backward Compatibility**: Existing relationships preserved, API compatibility maintained
 
 ### 🔄 **IN PROGRESS:**
+
 - Annotation usage tracking
 - Generic type parameter handling
 - Framework-specific dependency detection (Spring, JUnit)
 
 ### 📋 **REMAINING WORK:**
+
 - Performance testing with large codebases (1000+ classes)
 - Incremental parsing for large repositories
 - Cleanup utilities for orphaned nodes
@@ -33,6 +36,7 @@ Enhance the Java parser to capture comprehensive class-to-class dependency relat
 **Solution**: Implement comprehensive class dependency detection to create `USES` relationships between classes based on imports, object instantiation, static method calls, field types, and method signatures.
 
 **Impact**:
+
 - **Complete Dependency Mapping**: Understand full class interaction patterns beyond inheritance
 - **Impact Analysis**: Identify which classes are affected by changes to a specific class
 - **Architecture Visualization**: Generate comprehensive dependency graphs for system understanding
@@ -43,6 +47,7 @@ Enhance the Java parser to capture comprehensive class-to-class dependency relat
 ## Acceptance Criteria
 
 ### Must Have
+
 - [x] Parse Java import statements and create Class→Class USES relationships
 - [x] Detect object instantiation (`new ClassName()`) and create USES relationships
 - [x] Identify static method calls (`ClassName.staticMethod()`) and create USES relationships
@@ -53,6 +58,7 @@ Enhance the Java parser to capture comprehensive class-to-class dependency relat
 - [x] Create placeholder class nodes for external dependencies (framework/library classes)
 
 ### Should Have
+
 - [ ] Track annotation usage and create USES relationships
 - [ ] Handle generic type parameters (`List<ClassName>`)
 - [ ] Detect lambda expressions and method references
@@ -60,6 +66,7 @@ Enhance the Java parser to capture comprehensive class-to-class dependency relat
 - [ ] Capture exception handling dependencies (`catch (ExceptionClass e)`)
 
 ### Could Have
+
 - [ ] Analyze reflection-based class usage
 - [ ] Support annotation processor generated dependencies
 - [ ] Track dependency injection patterns (Spring @Autowired, etc.)
@@ -70,18 +77,20 @@ Enhance the Java parser to capture comprehensive class-to-class dependency relat
 ### Parser Enhancements
 
 **Import Statement Processing:**
+
 ```java
 // Add visitor method for import declarations
 @Override
 public void visit(ImportDeclaration importDecl, Void arg) {
     String importedClassName = extractClassName(importDecl.getNameAsString());
     ClassNode importedClass = getOrCreateClassNode(importedClassName);
-    graphService.createRelationship(currentClass.getId(), importedClass.getId(), "USES", 
+    graphService.createRelationship(currentClass.getId(), importedClass.getId(), "USES",
         Map.of("type", "import", "fullyQualifiedName", importDecl.getNameAsString()));
 }
 ```
 
 **Object Instantiation Detection:**
+
 ```java
 // Detect new expressions
 methodDecl.findAll(ObjectCreationExpr.class).forEach(newExpr -> {
@@ -93,6 +102,7 @@ methodDecl.findAll(ObjectCreationExpr.class).forEach(newExpr -> {
 ```
 
 **Static Method Call Detection:**
+
 ```java
 // Detect static method calls
 methodDecl.findAll(MethodCallExpr.class).forEach(methodCall -> {
@@ -108,6 +118,7 @@ methodDecl.findAll(MethodCallExpr.class).forEach(methodCall -> {
 ### Data Model Extensions
 
 **Enhanced USES Relationship Properties:**
+
 ```cypher
 // USES relationship with rich metadata
 (:Class)-[:USES {
@@ -120,6 +131,7 @@ methodDecl.findAll(MethodCallExpr.class).forEach(methodCall -> {
 ```
 
 **Class Node Enhancements:**
+
 ```java
 // Add flags to ClassNode
 private boolean isExternal = false;        // External library/framework class
@@ -131,6 +143,7 @@ private Set<String> importedBy = new HashSet<>();  // Classes that import this
 ### Implementation Phases
 
 #### Phase 1: Core Import and Instantiation Tracking (1 week) ✅ COMPLETED
+
 - [x] Add `ImportDeclaration` visitor to `JavaParserService`
 - [x] Implement object instantiation detection (`new ClassName()`)
 - [x] Create basic Class→Class USES relationships
@@ -138,6 +151,7 @@ private Set<String> importedBy = new HashSet<>();  // Classes that import this
 - [x] Handle class name resolution (imports vs fully qualified names)
 
 #### Phase 2: Advanced Dependency Detection (1 week) ✅ COMPLETED
+
 - [x] Static method call detection
 - [x] Field type dependency extraction
 - [x] Method parameter and return type analysis
@@ -145,6 +159,7 @@ private Set<String> importedBy = new HashSet<>();  // Classes that import this
 - [ ] Generic type parameter handling
 
 #### Phase 3: External Dependency Management (3 days) ✅ COMPLETED
+
 - [x] Create placeholder nodes for external classes
 - [x] Mark external vs internal dependencies
 - [ ] Integrate with Maven/Gradle dependency metadata
@@ -155,6 +170,7 @@ private Set<String> importedBy = new HashSet<>();  // Classes that import this
 ### New Cypher Query Capabilities
 
 **Class Dependency Analysis:**
+
 ```cypher
 // Find all classes that depend on a specific class
 MATCH (dependent:Class)-[:USES]->(target:Class {name: "TargetClass"})
@@ -172,13 +188,14 @@ RETURN c1.name, c2.name
 ```
 
 **Package Coupling Metrics:**
+
 ```cypher
 // Calculate efferent coupling (Ce) - outgoing dependencies
 MATCH (c:Class {packageName: "com.example.package"})-[:USES]->(external:Class)
 WHERE external.packageName <> "com.example.package"
 RETURN count(DISTINCT external.packageName) as efferentCoupling
 
-// Calculate afferent coupling (Ca) - incoming dependencies  
+// Calculate afferent coupling (Ca) - incoming dependencies
 MATCH (external:Class)-[:USES]->(c:Class {packageName: "com.example.package"})
 WHERE external.packageName <> "com.example.package"
 RETURN count(DISTINCT external.packageName) as afferentCoupling
@@ -187,6 +204,7 @@ RETURN count(DISTINCT external.packageName) as afferentCoupling
 ### REST API Extensions
 
 **New Dependency Analysis Endpoints:**
+
 ```java
 GET /api/v1/analysis/dependencies/{className}
 GET /api/v1/analysis/package-coupling/{packageName}
@@ -198,6 +216,7 @@ GET /api/v1/analysis/dependency-graph/{scope}
 ## Testing Strategy
 
 ### Unit Tests
+
 - [x] Test import statement parsing with various import patterns
 - [x] Verify object instantiation detection in different contexts
 - [x] Test static method call identification
@@ -205,12 +224,14 @@ GET /api/v1/analysis/dependency-graph/{scope}
 - [x] Test external vs internal class classification
 
 ### Integration Tests
+
 - [x] End-to-end dependency analysis on sample Java projects
 - [x] Verify correct USES relationship creation and metadata
 - [x] Test with complex inheritance and composition hierarchies
 - [ ] Validate performance with large codebases (1000+ classes)
 
 ### Real-World Validation
+
 - [x] Test against `catalog-service` project to ensure comprehensive dependency capture
 - [ ] Verify Spring framework dependency detection
 - [ ] Test Maven/Gradle library dependency identification
@@ -219,6 +240,7 @@ GET /api/v1/analysis/dependency-graph/{scope}
 ## Performance Considerations
 
 ### Optimization Strategies
+
 - [x] Implement class name caching to avoid repeated lookups
 - [x] Batch relationship creation for improved database performance
 - [x] Use lazy loading for external class metadata
@@ -226,6 +248,7 @@ GET /api/v1/analysis/dependency-graph/{scope}
 - [ ] Cache resolved class mappings between parser runs
 
 ### Memory Management
+
 - [x] Limit placeholder class creation for unknown external dependencies
 - [ ] Implement cleanup for unused external class nodes
 - [ ] Use weak references for transient parsing data structures
@@ -233,12 +256,14 @@ GET /api/v1/analysis/dependency-graph/{scope}
 ## Migration Strategy
 
 ### Backward Compatibility
+
 - [x] Ensure existing EXTENDS/IMPLEMENTS relationships remain unchanged
 - [x] Add new USES relationships without affecting current queries
 - [x] Provide migration path for existing graph data
 - [x] Maintain API compatibility for current endpoints
 
 ### Data Migration
+
 - [x] Re-parse existing repositories to add missing USES relationships
 - [ ] Provide option to incrementally update dependencies
 - [ ] Create utility to identify and clean up orphaned class nodes
@@ -246,12 +271,14 @@ GET /api/v1/analysis/dependency-graph/{scope}
 ## Success Metrics
 
 ### Functional Metrics
+
 - [x] **Dependency Coverage**: >95% of actual class dependencies captured
-- [x] **External Library Detection**: >90% of framework/library usage identified  
+- [x] **External Library Detection**: >90% of framework/library usage identified
 - [x] **Performance**: Parse 1000 classes with dependencies in <60 seconds
 - [x] **Accuracy**: <1% false positive dependency relationships
 
 ### Business Metrics
+
 - [x] **Impact Analysis**: Enable accurate change impact assessment
 - [x] **Architecture Insights**: Generate meaningful dependency visualizations
 - [x] **Code Quality**: Support refactoring decisions with dependency data
@@ -260,23 +287,25 @@ GET /api/v1/analysis/dependency-graph/{scope}
 ## Examples
 
 ### Before Enhancement
+
 ```cypher
 // Current state - only inheritance relationships
 MATCH (c:Class {name: "UserService"})-[r]->(related:Class)
 RETURN type(r), related.name
-// Results: 
+// Results:
 // "EXTENDS" -> "BaseService"
 // "IMPLEMENTS" -> "UserOperations"
 ```
 
-### After Enhancement  
+### After Enhancement
+
 ```cypher
 // Enhanced state - comprehensive dependencies
 MATCH (c:Class {name: "UserService"})-[r]->(related:Class)
 RETURN type(r), r.type, related.name
 // Results:
 // "EXTENDS" -> null -> "BaseService"
-// "IMPLEMENTS" -> null -> "UserOperations" 
+// "IMPLEMENTS" -> null -> "UserOperations"
 // "USES" -> "import" -> "UserRepository"
 // "USES" -> "instantiation" -> "EmailService"
 // "USES" -> "static_call" -> "ValidationUtils"
@@ -286,11 +315,13 @@ RETURN type(r), r.type, related.name
 ## Dependencies
 
 ### Prerequisites
+
 - [ ] Current JavaParser integration working correctly
 - [ ] Neo4j graph database with existing class nodes
 - [ ] GraphService supporting relationship metadata
 
 ### External Dependencies
+
 - [ ] JavaParser library (already integrated)
 - [ ] Neo4j Java Driver (already integrated)
 - [ ] Spring Boot framework (already integrated)
@@ -298,28 +329,34 @@ RETURN type(r), r.type, related.name
 ## Risks and Mitigation
 
 ### Technical Risks
+
 - **Risk**: Performance degradation with large codebases
+
   - **Mitigation**: Implement incremental parsing and caching strategies
 
-- **Risk**: Memory usage increase from external class placeholders  
+- **Risk**: Memory usage increase from external class placeholders
+
   - **Mitigation**: Limit placeholder creation and implement cleanup policies
 
 - **Risk**: Complex class name resolution in edge cases
   - **Mitigation**: Comprehensive testing with various Java patterns and fallback strategies
 
 ### Business Risks
+
 - **Risk**: Breaking changes to existing API consumers
   - **Mitigation**: Maintain backward compatibility and provide migration documentation
 
 ## Future Enhancements
 
 ### Advanced Analysis
+
 - [ ] Dependency strength scoring based on usage frequency
 - [ ] Temporal dependency analysis (track changes over time)
 - [ ] Code smell detection based on dependency patterns
 - [ ] Automated refactoring suggestions for improving coupling
 
 ### Integration Opportunities
+
 - [ ] IDE plugin for real-time dependency visualization
 - [ ] CI/CD integration for dependency change alerts
 - [ ] Code review automation with dependency impact analysis

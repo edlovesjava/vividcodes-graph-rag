@@ -9,26 +9,31 @@ The Java Graph RAG system provides comprehensive dependency analysis capabilitie
 The system captures five distinct types of class dependencies:
 
 ### 1. Import Dependencies (`type: "import"`)
+
 - **Description**: Classes imported via `import` statements
 - **Example**: `import java.util.List;` creates `CurrentClass -[:USES {type: "import"}]-> List`
 - **Use Cases**: Understanding external library usage, tracking framework dependencies
 
 ### 2. Object Instantiation (`type: "instantiation"`)
+
 - **Description**: Classes instantiated with `new ClassName()`
 - **Example**: `new ArrayList<>()` creates `CurrentClass -[:USES {type: "instantiation"}]-> ArrayList`
 - **Use Cases**: Identifying object creation patterns, factory usage analysis
 
 ### 3. Parameter Type Dependencies (`type: "parameter_type"`)
+
 - **Description**: Classes used as method parameters
 - **Example**: `public void process(UserRequest request)` creates `CurrentClass -[:USES {type: "parameter_type"}]-> UserRequest`
 - **Use Cases**: API contract analysis, method signature dependencies
 
 ### 4. Return Type Dependencies (`type: "return_type"`)
+
 - **Description**: Classes used as method return types
 - **Example**: `public UserResponse getUser()` creates `CurrentClass -[:USES {type: "return_type"}]-> UserResponse`
 - **Use Cases**: Output contract analysis, response type tracking
 
 ### 5. Field Type Dependencies (`type: "field_type"`)
+
 - **Description**: Classes used as field types
 - **Example**: `private Logger logger;` creates `CurrentClass -[:USES {type: "field_type"}]-> Logger`
 - **Use Cases**: Composition analysis, dependency injection patterns
@@ -37,12 +42,12 @@ The system captures five distinct types of class dependencies:
 
 Each `USES` relationship includes rich metadata:
 
-| Property | Description | Example |
-|----------|-------------|---------|
-| `type` | Dependency type | `"import"`, `"instantiation"`, etc. |
-| `context` | Usage context | `"method: saveUser"`, `"field: logger"` |
-| `fullyQualifiedName` | Full class name | `"java.util.List"` |
-| `isExternal` | External dependency flag | `true` for framework classes |
+| Property             | Description              | Example                                 |
+| -------------------- | ------------------------ | --------------------------------------- |
+| `type`               | Dependency type          | `"import"`, `"instantiation"`, etc.     |
+| `context`            | Usage context            | `"method: saveUser"`, `"field: logger"` |
+| `fullyQualifiedName` | Full class name          | `"java.util.List"`                      |
+| `isExternal`         | External dependency flag | `true` for framework classes            |
 
 ## Real-World Usage Examples
 
@@ -68,7 +73,7 @@ LIMIT 10
 ```cypher
 // Detect architectural layer violations (e.g., Controller directly using Repository)
 MATCH (controller:Class)-[r:USES]->(repository:Class)
-WHERE controller.name CONTAINS "Controller" 
+WHERE controller.name CONTAINS "Controller"
   AND repository.name CONTAINS "Repository"
   AND r.type IN ["instantiation", "parameter_type", "return_type"]
 RETURN controller.name as violatingController,
@@ -149,7 +154,7 @@ WITH source.packageName as sourcePackage,
 RETURN sourcePackage,
        targetPackage,
        couplingStrength,
-       CASE 
+       CASE
          WHEN couplingStrength > 20 THEN "High Coupling"
          WHEN couplingStrength > 10 THEN "Medium Coupling"
          ELSE "Low Coupling"
@@ -265,21 +270,25 @@ curl -X POST http://localhost:8080/api/v1/cypher \
 ## Best Practices
 
 ### 1. Regular Dependency Audits
+
 - Run dependency analysis weekly
 - Monitor coupling metrics trends
 - Track external dependency growth
 
 ### 2. Architectural Governance
+
 - Set coupling thresholds (e.g., max 30 dependencies per class)
 - Enforce layer separation rules
 - Monitor circular dependency introduction
 
 ### 3. Refactoring Prioritization
+
 - Focus on high-coupling classes first
 - Address circular dependencies immediately
 - Consider dead code removal during major releases
 
 ### 4. Documentation Integration
+
 - Include dependency graphs in architecture documentation
 - Document high-impact classes and their usage patterns
 - Maintain external dependency inventory

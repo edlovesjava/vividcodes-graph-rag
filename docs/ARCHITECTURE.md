@@ -37,11 +37,11 @@ The Java Graph RAG system is designed as a layered architecture that transforms 
 graph TD
     A["REST API<br/>Controllers"] <--> B["Java Parser<br/>Service"]
     B <--> C["Neo4j Graph<br/>Database"]
-    
+
     A --> D["DTOs &<br/>Validation"]
     B --> E["AST Visitor<br/>& Filters"]
     C --> F["Graph Models<br/>& Schema"]
-    
+
     style A fill:#e1f5fe
     style B fill:#f3e5f5
     style C fill:#e8f5e8
@@ -234,13 +234,13 @@ graph TD
     P --> C[Class]
     C --> M[Method]
     C --> F[Field]
-    
+
     C1[Class] -.->|EXTENDS| C2[Class]
     C1 -.->|IMPLEMENTS| C3[Interface]
     C1 -.->|USES| C4[Class]
     M1[Method] -.->|CALLS| M2[Method]
     M1 -.->|USES| F1[Field]
-    
+
     style R fill:#ff9999
     style SP fill:#99ccff
     style P fill:#99ff99
@@ -291,7 +291,7 @@ graph TD
 ```mermaid
 graph LR
     A["Spring Boot<br/>Application<br/>(Port 8080)"] <--> B["Neo4j<br/>Database<br/>(Port 7474)"]
-    
+
     style A fill:#e1f5fe
     style B fill:#e8f5e8
 ```
@@ -302,7 +302,7 @@ graph LR
 graph LR
     A["Load Balancer<br/>(Nginx)"] <--> B["Application<br/>Instances"]
     B <--> C["Neo4j Cluster<br/>(3+ nodes)"]
-    
+
     style A fill:#ffecb3
     style B fill:#e1f5fe
     style C fill:#e8f5e8
