@@ -13,6 +13,8 @@ Descriptions of features being developed are in the prd directory
 - **[Phase 1 Summary](PHASE1_SUMMARY.md)** - Complete overview of Phase 1 implementation
 - **[Architecture](ARCHITECTURE.md)** - Detailed system architecture and design
 - **[API Documentation](API_DOCUMENTATION.md)** - Complete REST API reference
+- **[API Query Examples](API_QUERY_EXAMPLES.md)** - Comprehensive Cypher query examples
+- **[Dependency Analysis Guide](DEPENDENCY_ANALYSIS_GUIDE.md)** - USES relationships and dependency analysis
 - **[Deployment](DEPLOYMENT.md)** - Deployment guides for all environments
 - **[Conventional Commits](CONVENTIONAL_COMMITS.md)** - Commit message standards and guidelines
 
@@ -27,12 +29,14 @@ Descriptions of features being developed are in the prd directory
 
 ```
 docs/
-├── README.md                 # This index file
-├── PHASE1_SUMMARY.md        # Phase 1 implementation summary
-├── ARCHITECTURE.md          # System architecture and design
-├── API_DOCUMENTATION.md     # REST API reference
-├── DEPLOYMENT.md            # Deployment guides
-└── CONVENTIONAL_COMMITS.md  # Commit message standards
+├── README.md                    # This index file
+├── PHASE1_SUMMARY.md           # Phase 1 implementation summary
+├── ARCHITECTURE.md             # System architecture and design
+├── API_DOCUMENTATION.md        # REST API reference
+├── API_QUERY_EXAMPLES.md       # Comprehensive Cypher query examples
+├── DEPENDENCY_ANALYSIS_GUIDE.md # USES relationships and dependency analysis
+├── DEPLOYMENT.md               # Deployment guides
+└── CONVENTIONAL_COMMITS.md     # Commit message standards
 ```
 
 ## 🎯 Documentation Purpose

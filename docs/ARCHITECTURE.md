@@ -89,6 +89,36 @@ The Java Graph RAG system is designed as a layered architecture that transforms 
 
 ### Node Types
 ```cypher
+// Repository nodes
+(:Repository {
+  id: String,
+  name: String,
+  organization: String,
+  url: String,
+  path: String,
+  commit_hash: String,
+  commit_date: DateTime,
+  language_stats: Map,
+  created_at: DateTime,
+  updated_at: DateTime
+})
+
+// SubProject nodes
+(:SubProject {
+  id: String,
+  name: String,
+  type: String,
+  path: String,
+  version: String,
+  description: String,
+  dependencies: List<String>,
+  source_directories: List<String>,
+  test_directories: List<String>,
+  repository_id: String,
+  created_at: DateTime,
+  updated_at: DateTime
+})
+
 // Package nodes
 (:Package {
   id: String,
@@ -110,10 +140,12 @@ The Java Graph RAG system is designed as a layered architecture that transforms 
   is_interface: Boolean,
   is_enum: Boolean,
   is_annotation: Boolean,
+  is_external: Boolean,
   file_path: String,
   line_start: Integer,
   line_end: Integer,
   package_name: String,
+  repository_id: String,
   created_at: DateTime,
   updated_at: DateTime
 })
@@ -152,9 +184,12 @@ The Java Graph RAG system is designed as a layered architecture that transforms 
 })
 ```
 
-### Relationship Types (Phase 2)
+### Relationship Types
+
 ```cypher
 // Structural relationships
+(:Repository)-[:CONTAINS]->(:SubProject)
+(:SubProject)-[:CONTAINS]->(:Package)
 (:Package)-[:CONTAINS]->(:Class)
 (:Class)-[:CONTAINS]->(:Method)
 (:Class)-[:CONTAINS]->(:Field)
@@ -163,8 +198,14 @@ The Java Graph RAG system is designed as a layered architecture that transforms 
 (:Class)-[:EXTENDS]->(:Class)
 (:Class)-[:IMPLEMENTS]->(:Class)
 
-// Dependency relationships
+// Dependency relationships (Enhanced in STORY_013)
 (:Method)-[:CALLS]->(:Method)
+(:Class)-[:USES {
+  type: "import|instantiation|parameter_type|return_type|field_type",
+  context: String,
+  fullyQualifiedName: String,
+  isExternal: Boolean
+}]->(:Class)
 (:Method)-[:USES]->(:Field)
 (:Class)-[:DEPENDS_ON]->(:Class)
 ```

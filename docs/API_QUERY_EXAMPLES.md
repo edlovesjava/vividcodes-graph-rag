@@ -116,7 +116,8 @@ curl -X GET http://localhost:8080/api/v1/data/stats
       "CONTAINS": 150,
       "CALLS": 100,
       "EXTENDS": 25,
-      "IMPLEMENTS": 25
+      "IMPLEMENTS": 25,
+      "USES": 1773
     },
     "repositories": {
       "count": 3,
@@ -140,7 +141,185 @@ curl -X POST http://localhost:8080/api/v1/data/clear-and-ingest \
 
 ## Graph Query Examples
 
-After ingesting your Java codebase, you can use these Cypher queries to explore the call sequences and relationships between methods.
+After ingesting your Java codebase, you can use these Cypher queries to explore the call sequences and relationships between methods. The system now captures comprehensive dependency relationships through the `USES` relationship type, providing deep insights into class dependencies, imports, object instantiation, and type usage patterns.
+
+## Dependency Analysis with USES Relationships
+
+### Overview of USES Relationships
+
+The system captures five types of class dependencies through `USES` relationships:
+
+1. **Import Dependencies** (`type: "import"`) - Classes imported via import statements
+2. **Object Instantiation** (`type: "instantiation"`) - Classes instantiated with `new ClassName()`
+3. **Parameter Type Dependencies** (`type: "parameter_type"`) - Classes used as method parameters
+4. **Return Type Dependencies** (`type: "return_type"`) - Classes used as method return types
+5. **Field Type Dependencies** (`type: "field_type"`) - Classes used as field types
+
+Each `USES` relationship includes rich metadata:
+- `type`: The type of dependency (import, instantiation, etc.)
+- `context`: Where the dependency occurs (method name, field name, etc.)
+- `fullyQualifiedName`: Full class name for external dependencies
+- `isExternal`: Whether the dependency is external (framework/library class)
+
+### Dependency Analysis Queries
+
+#### 1. Analyze Dependency Types
+
+```cypher
+// Count dependencies by type
+MATCH ()-[r:USES]->()
+RETURN r.type as dependencyType, count(r) as count
+ORDER BY count DESC
+```
+
+#### 2. Find Classes with Most Dependencies
+
+```cypher
+// Find classes with the most outgoing dependencies
+MATCH (source:Class)-[r:USES]->(target:Class)
+RETURN source.name as className,
+       count(r) as dependencyCount,
+       collect(DISTINCT r.type) as dependencyTypes
+ORDER BY dependencyCount DESC
+LIMIT 10
+```
+
+#### 3. Analyze Import Dependencies
+
+```cypher
+// Find all import dependencies
+MATCH (source:Class)-[r:USES]->(target:Class)
+WHERE r.type = "import"
+RETURN source.name as sourceClass,
+       target.name as importedClass,
+       r.fullyQualifiedName as fullyQualifiedName
+ORDER BY sourceClass, importedClass
+LIMIT 20
+```
+
+#### 4. Find Object Instantiation Patterns
+
+```cypher
+// Find classes that instantiate other classes
+MATCH (source:Class)-[r:USES]->(target:Class)
+WHERE r.type = "instantiation"
+RETURN source.name as sourceClass,
+       target.name as instantiatedClass,
+       r.context as context
+ORDER BY sourceClass, instantiatedClass
+```
+
+#### 5. Analyze Method Parameter Dependencies
+
+```cypher
+// Find parameter type dependencies
+MATCH (source:Class)-[r:USES]->(target:Class)
+WHERE r.type = "parameter_type"
+RETURN source.name as sourceClass,
+       target.name as parameterType,
+       r.context as methodContext
+ORDER BY sourceClass, parameterType
+LIMIT 20
+```
+
+#### 6. Find Return Type Dependencies
+
+```cypher
+// Find return type dependencies
+MATCH (source:Class)-[r:USES]->(target:Class)
+WHERE r.type = "return_type"
+RETURN source.name as sourceClass,
+       target.name as returnType,
+       r.context as methodContext
+ORDER BY sourceClass, returnType
+```
+
+#### 7. Analyze Field Type Dependencies
+
+```cypher
+// Find field type dependencies
+MATCH (source:Class)-[r:USES]->(target:Class)
+WHERE r.type = "field_type"
+RETURN source.name as sourceClass,
+       target.name as fieldType,
+       r.context as fieldContext
+ORDER BY sourceClass, fieldType
+```
+
+#### 8. Find External Dependencies
+
+```cypher
+// Find external library/framework dependencies
+MATCH (source:Class)-[r:USES]->(target:Class)
+WHERE target.isExternal = true OR target.name IN ["String", "List", "Map", "Optional", "LocalDateTime"]
+RETURN source.name as sourceClass,
+       target.name as externalClass,
+       r.type as dependencyType,
+       count(r) as usageCount
+ORDER BY usageCount DESC, sourceClass
+```
+
+#### 9. Dependency Impact Analysis
+
+```cypher
+// Find classes that would be impacted by changes to a specific class
+MATCH (dependent:Class)-[r:USES]->(target:Class {name: "YourClassName"})
+RETURN dependent.name as dependentClass,
+       r.type as dependencyType,
+       r.context as context,
+       dependent.packageName as dependentPackage
+ORDER BY dependentClass
+```
+
+#### 10. Package Coupling Analysis
+
+```cypher
+// Analyze coupling between packages
+MATCH (source:Class)-[r:USES]->(target:Class)
+WHERE source.packageName <> target.packageName
+RETURN source.packageName as sourcePackage,
+       target.packageName as targetPackage,
+       count(r) as couplingStrength,
+       collect(DISTINCT r.type) as dependencyTypes
+ORDER BY couplingStrength DESC
+LIMIT 15
+```
+
+#### 11. Circular Dependency Detection
+
+```cypher
+// Find potential circular dependencies
+MATCH (c1:Class)-[:USES]->(c2:Class)-[:USES]->(c1)
+WHERE c1 <> c2
+RETURN c1.name as class1,
+       c2.name as class2,
+       c1.packageName as package1,
+       c2.packageName as package2
+ORDER BY class1, class2
+```
+
+#### 12. Architectural Layer Analysis
+
+```cypher
+// Analyze dependencies between architectural layers
+MATCH (source:Class)-[r:USES]->(target:Class)
+WHERE source.name CONTAINS "Controller" OR source.name CONTAINS "Service" OR source.name CONTAINS "Repository"
+RETURN 
+  CASE 
+    WHEN source.name CONTAINS "Controller" THEN "Controller"
+    WHEN source.name CONTAINS "Service" THEN "Service"
+    WHEN source.name CONTAINS "Repository" THEN "Repository"
+    ELSE "Other"
+  END as sourceLayer,
+  CASE 
+    WHEN target.name CONTAINS "Controller" THEN "Controller"
+    WHEN target.name CONTAINS "Service" THEN "Service"
+    WHEN target.name CONTAINS "Repository" THEN "Repository"
+    ELSE "Other"
+  END as targetLayer,
+  count(r) as dependencyCount
+ORDER BY sourceLayer, targetLayer
+```
 
 ### 1. Basic Graph Exploration Queries
 
