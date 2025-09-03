@@ -1,5 +1,6 @@
 package com.vividcodes.graphrag.service;
 
+import java.time.LocalDateTime;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -263,6 +264,39 @@ public class DependencyAnalyzer {
      * @return The ClassNode for the class
      */
     private ClassNode getOrCreateClassNode(final String simpleClassName, final String fullyQualifiedName) {
-        return nodeFactory.createExternalClassNode(simpleClassName, fullyQualifiedName, graphService);
+        // Determine if this is truly an external class using the same logic as regular class creation
+        final boolean isExternal = typeResolver.isExternalClass(fullyQualifiedName);
+        
+        if (isExternal) {
+            // Create external class node for framework/library classes
+            return nodeFactory.createExternalClassNode(simpleClassName, fullyQualifiedName, graphService);
+        } else {
+            // Create a placeholder internal class node for application classes that weren't parsed yet
+            // This can happen when a class is referenced but not included in the parsing scope
+            return createPlaceholderInternalClassNode(simpleClassName, fullyQualifiedName);
+        }
+    }
+    
+    /**
+     * Create a placeholder node for internal classes that are referenced but not parsed.
+     * This maintains consistency with the isExternal property.
+     */
+    private ClassNode createPlaceholderInternalClassNode(final String simpleClassName, final String fullyQualifiedName) {
+        final String packageName = typeResolver.extractPackageName(fullyQualifiedName);
+        
+        // Create internal class node (similar to createExternalClassNode but with isExternal = false)
+        final ClassNode internalClass = new ClassNode(simpleClassName, packageName, "");
+        internalClass.setFullyQualifiedName(fullyQualifiedName);
+        internalClass.setIsExternal(false); // This is the key difference
+        
+        // Set timestamps
+        final LocalDateTime now = LocalDateTime.now();
+        internalClass.setCreatedAt(now);
+        internalClass.setUpdatedAt(now);
+        
+        // Save to graph database
+        graphService.saveClass(internalClass);
+        
+        return internalClass;
     }
 }

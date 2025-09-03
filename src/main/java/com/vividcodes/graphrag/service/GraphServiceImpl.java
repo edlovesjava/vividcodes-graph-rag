@@ -87,6 +87,7 @@ public class GraphServiceImpl implements GraphService {
                     c.commit_hash = $commitHash,
                     c.commit_date = $commitDate,
                     c.file_relative_path = $fileRelativePath,
+                    c.is_external = $isExternal,
                     c.created_at = $createdAt,
                     c.updated_at = $updatedAt
                 """;
@@ -110,6 +111,7 @@ public class GraphServiceImpl implements GraphService {
                 "commitHash", classNode.getCommitHash(),
                 "commitDate", classNode.getCommitDate(),
                 "fileRelativePath", classNode.getFileRelativePath(),
+                "isExternal", classNode.getIsExternal(),
                 "createdAt", classNode.getCreatedAt(),
                 "updatedAt", classNode.getUpdatedAt()
             ));

@@ -71,6 +71,11 @@ public class TypeResolver {
      * @return true if the class is considered external, false otherwise
      */
     public boolean isExternalClass(final String fullyQualifiedName) {
+        // Handle common Java classes that appear without package names in code
+        if (isCommonJavaClass(fullyQualifiedName)) {
+            return true;
+        }
+        
         // Basic heuristic: consider classes external if they're from common frameworks/libraries
         return fullyQualifiedName.startsWith("java.") ||
                fullyQualifiedName.startsWith("javax.") ||
@@ -79,6 +84,33 @@ public class TypeResolver {
                fullyQualifiedName.startsWith("com.fasterxml.jackson.") ||
                fullyQualifiedName.startsWith("org.apache.") ||
                fullyQualifiedName.startsWith("com.google.");
+    }
+    
+    /**
+     * Check if a class name (without package) is a common Java standard library class.
+     * These classes are automatically imported and often appear without package names.
+     */
+    private boolean isCommonJavaClass(final String className) {
+        // Common java.lang classes (automatically imported)
+        if (className.equals("String") || className.equals("Object") || className.equals("Class") ||
+            className.equals("Integer") || className.equals("Long") || className.equals("Double") ||
+            className.equals("Float") || className.equals("Boolean") || className.equals("Character") ||
+            className.equals("Byte") || className.equals("Short") || className.equals("Number") ||
+            className.equals("Exception") || className.equals("RuntimeException") || className.equals("Error") ||
+            className.equals("Thread") || className.equals("Runnable") || className.equals("System") ||
+            className.equals("Math") || className.equals("StringBuilder") || className.equals("StringBuffer")) {
+            return true;
+        }
+        
+        // Common collection classes that might appear without full package names
+        if (className.equals("List") || className.equals("Map") || className.equals("Set") ||
+            className.equals("Collection") || className.equals("ArrayList") || className.equals("HashMap") ||
+            className.equals("HashSet") || className.equals("LinkedList") || className.equals("TreeMap") ||
+            className.equals("TreeSet") || className.equals("Optional") || className.equals("Stream")) {
+            return true;
+        }
+        
+        return false;
     }
 
     /**
