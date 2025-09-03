@@ -7,44 +7,53 @@ The Java Graph RAG system is designed as a layered architecture that transforms 
 ## Architecture Layers
 
 ### 1. Presentation Layer
+
 - **REST Controllers**: Handle HTTP requests for code ingestion and health checks
 - **API Documentation**: OpenAPI/Swagger documentation for endpoints
 - **Error Handling**: Centralized error handling and response formatting
 
 ### 2. Business Logic Layer
+
 - **Java Parser Service**: Core service for parsing Java source code
 - **Graph Service**: Manages graph database operations
 - **Query Engine**: Converts natural language to graph queries (Phase 2)
 - **LLM Integration**: AI model integration for code analysis (Phase 2)
 
 ### 3. Data Access Layer
+
 - **Graph Repository**: Neo4j data access operations
 - **Graph Models**: Domain entities mapped to graph nodes
 - **DTOs**: Data transfer objects for API communication
 
 ### 4. Infrastructure Layer
+
 - **Configuration**: Application and database configuration
 - **Docker**: Containerization for deployment
 - **Health Monitoring**: Application health and metrics
 
 ## Component Architecture
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   REST API      │    │  Java Parser    │    │   Neo4j Graph   │
-│   Controllers   │◄──►│   Service       │◄──►│   Database      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         ▼                       ▼                       ▼
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   DTOs &        │    │   AST Visitor   │    │   Graph Models  │
-│   Validation    │    │   & Filters     │    │   & Schema      │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+```mermaid
+graph TD
+    A["REST API<br/>Controllers"] <--> B["Java Parser<br/>Service"]
+    B <--> C["Neo4j Graph<br/>Database"]
+    
+    A --> D["DTOs &<br/>Validation"]
+    B --> E["AST Visitor<br/>& Filters"]
+    C --> F["Graph Models<br/>& Schema"]
+    
+    style A fill:#e1f5fe
+    style B fill:#f3e5f5
+    style C fill:#e8f5e8
+    style D fill:#fff3e0
+    style E fill:#fce4ec
+    style F fill:#f1f8e9
 ```
 
 ## Data Flow
 
 ### Code Ingestion Flow
+
 1. **HTTP Request**: Client sends Java project path via REST API
 2. **Validation**: Request validation and filtering configuration
 3. **File Discovery**: Recursive Java file discovery with filtering
@@ -54,6 +63,7 @@ The Java Graph RAG system is designed as a layered architecture that transforms 
 7. **Response**: Success/failure response to client
 
 ### Query Flow (Phase 2)
+
 1. **Natural Language Query**: User submits question in natural language
 2. **Query Processing**: Convert to Cypher graph queries
 3. **Graph Traversal**: Execute queries against Neo4j
@@ -64,22 +74,26 @@ The Java Graph RAG system is designed as a layered architecture that transforms 
 ## Technology Stack
 
 ### Backend Framework
+
 - **Spring Boot 3.2.0**: Main application framework
 - **Spring Web**: REST API support
 - **Spring Data Neo4j**: Graph database integration
 - **Spring Validation**: Request validation
 
 ### Java Parsing
+
 - **JavaParser 3.25.5**: AST parsing library
 - **Custom Visitors**: Code element extraction
 - **File Filtering**: Configurable file inclusion/exclusion
 
 ### Graph Database
+
 - **Neo4j 5.15**: Graph database
 - **Cypher**: Graph query language
 - **APOC**: Neo4j procedures and utilities
 
 ### Development Tools
+
 - **Maven**: Build and dependency management
 - **Docker**: Containerization
 - **JUnit 5**: Unit testing
@@ -88,6 +102,7 @@ The Java Graph RAG system is designed as a layered architecture that transforms 
 ## Graph Schema Design
 
 ### Node Types
+
 ```cypher
 // Repository nodes
 (:Repository {
@@ -210,14 +225,47 @@ The Java Graph RAG system is designed as a layered architecture that transforms 
 (:Class)-[:DEPENDS_ON]->(:Class)
 ```
 
+### Graph Schema Visualization
+
+```mermaid
+graph TD
+    R[Repository] --> SP[SubProject]
+    SP --> P[Package]
+    P --> C[Class]
+    C --> M[Method]
+    C --> F[Field]
+    
+    C1[Class] -.->|EXTENDS| C2[Class]
+    C1 -.->|IMPLEMENTS| C3[Interface]
+    C1 -.->|USES| C4[Class]
+    M1[Method] -.->|CALLS| M2[Method]
+    M1 -.->|USES| F1[Field]
+    
+    style R fill:#ff9999
+    style SP fill:#99ccff
+    style P fill:#99ff99
+    style C fill:#ffcc99
+    style M fill:#cc99ff
+    style F fill:#ffff99
+    style C1 fill:#ffcc99
+    style C2 fill:#ffcc99
+    style C3 fill:#ffcc99
+    style C4 fill:#ffcc99
+    style M1 fill:#cc99ff
+    style M2 fill:#cc99ff
+    style F1 fill:#ffff99
+```
+
 ## Security Considerations
 
 ### Authentication & Authorization
+
 - **Neo4j Authentication**: Username/password authentication
 - **API Security**: Input validation and sanitization
 - **File System Access**: Restricted to specified source paths
 
 ### Data Protection
+
 - **Source Code**: Only metadata stored, not full source
 - **Access Control**: Database access controls
 - **Audit Trail**: Creation and update timestamps
@@ -225,11 +273,13 @@ The Java Graph RAG system is designed as a layered architecture that transforms 
 ## Scalability Design
 
 ### Horizontal Scaling
+
 - **Stateless Services**: REST API can be scaled horizontally
 - **Database Clustering**: Neo4j clustering for high availability
 - **Load Balancing**: API gateway for request distribution
 
 ### Performance Optimization
+
 - **Batch Processing**: Bulk graph operations
 - **Indexing**: Database indexes for query performance
 - **Caching**: Application-level caching (Phase 2)
@@ -237,30 +287,37 @@ The Java Graph RAG system is designed as a layered architecture that transforms 
 ## Deployment Architecture
 
 ### Development Environment
-```
-┌─────────────────┐    ┌─────────────────┐
-│   Spring Boot   │    │     Neo4j       │
-│   Application   │◄──►│   Database      │
-│   (Port 8080)   │    │   (Port 7474)   │
-└─────────────────┘    └─────────────────┘
+
+```mermaid
+graph LR
+    A["Spring Boot<br/>Application<br/>(Port 8080)"] <--> B["Neo4j<br/>Database<br/>(Port 7474)"]
+    
+    style A fill:#e1f5fe
+    style B fill:#e8f5e8
 ```
 
 ### Production Environment
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Load Balancer │    │   Application   │    │   Neo4j Cluster │
-│   (Nginx)       │◄──►│   Instances     │◄──►│   (3+ nodes)    │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
+
+```mermaid
+graph LR
+    A["Load Balancer<br/>(Nginx)"] <--> B["Application<br/>Instances"]
+    B <--> C["Neo4j Cluster<br/>(3+ nodes)"]
+    
+    style A fill:#ffecb3
+    style B fill:#e1f5fe
+    style C fill:#e8f5e8
 ```
 
 ## Monitoring & Observability
 
 ### Health Checks
+
 - **Application Health**: Spring Boot Actuator endpoints
 - **Database Health**: Neo4j connection monitoring
 - **Service Health**: Individual service health checks
 
 ### Metrics & Logging
+
 - **Application Metrics**: Performance and usage metrics
 - **Graph Metrics**: Database query performance
 - **Structured Logging**: JSON-formatted application logs
@@ -268,11 +325,13 @@ The Java Graph RAG system is designed as a layered architecture that transforms 
 ## Future Architecture Considerations
 
 ### Microservices Evolution
+
 - **Service Decomposition**: Split into focused microservices
 - **Event-Driven Architecture**: Async communication between services
 - **API Gateway**: Centralized API management
 
 ### AI/ML Integration
+
 - **Vector Embeddings**: Code semantic embeddings
 - **ML Models**: Code analysis and recommendation models
-- **Real-time Processing**: Stream processing for code changes 
+- **Real-time Processing**: Stream processing for code changes
