@@ -1,0 +1,23 @@
+Cypher Query Collection Index
+=============================
+
+Total Files: 8 query files + README + index
+
+Query Files:
+1. architectural_analysis.cypher (4.5KB) - Architecture patterns and violations
+2. basic_graph_exploration.cypher (2.0KB) - Basic graph structure exploration  
+3. code_quality_analysis.cypher (4.7KB) - Code quality issues and improvements
+4. dependency_analysis.cypher (3.9KB) - Class and package dependency analysis
+5. impact_analysis.cypher (5.7KB) - Change impact and risk assessment
+6. internal_class_imports_query.cypher (1.3KB) - Internal class import relationships
+7. tagforproduction_dependency_analysis.cypher (4.0KB) - Specific class dependency analysis
+8. README.md (6.8KB) - Comprehensive documentation and usage guide
+
+Total Query Collection Size: ~32KB
+
+Quick Start:
+- Begin with basic_graph_exploration.cypher for initial codebase understanding
+- Use dependency_analysis.cypher for coupling and circular dependency detection
+- Apply architectural_analysis.cypher for design pattern compliance
+- Leverage impact_analysis.cypher before making significant changes
+- Refer to README.md for detailed usage instructions and examples
