@@ -271,4 +271,133 @@ public class AnnotationUsesRelationshipIntegrationTest {
         assertTrue(paramResults.getResults().size() >= 2,
                   "Expected parameter-level annotations, found: " + paramResults.getResults().size());
     }
+
+    @Test
+    void shouldDetectGenericTypeDependencies() throws IOException, InterruptedException {
+        // Create test Java class with various generic types
+        String testGenericClass = """
+            package com.example;
+
+            import java.util.List;
+            import java.util.Map;
+            import java.util.Set;
+            import java.util.Collection;
+            import java.util.Optional;
+            import java.util.concurrent.Future;
+
+            public class GenericTypeService {
+                private List<String> stringList;
+                private Map<String, Integer> stringToIntMap;
+                private Set<Long> longSet;
+                private Collection<Double> doubleCollection;
+                private Optional<Boolean> optionalBoolean;
+                private Future<Object> futureObject;
+
+                public List<User> getUsers() {
+                    return null;
+                }
+
+                public Map<String, List<User>> getUsersByCategory(
+                    Set<String> categories,
+                    Optional<Integer> limit) {
+                    return null;
+                }
+
+                public <T> Future<List<T>> processGeneric(Collection<T> input) {
+                    return null;
+                }
+            }
+            """;
+
+        // Create test user class referenced in generics
+        String userClass = """
+            package com.example;
+            
+            public class User {
+                private String name;
+            }
+            """;
+
+        // Save test files
+        Path testDir = tempDir.resolve("generic-test");
+        Files.createDirectories(testDir);
+        
+        Path genericServiceFile = testDir.resolve("GenericTypeService.java");
+        Files.write(genericServiceFile, testGenericClass.getBytes());
+        
+        Path userFile = testDir.resolve("User.java");  
+        Files.write(userFile, userClass.getBytes());
+
+        // Parse the directory
+        javaParserService.parseDirectory(testDir.toString());
+
+        // Allow processing time
+        Thread.sleep(500);
+
+        // Test 1: Query for field-level generic dependencies
+        String fieldGenericQuery = """
+            MATCH (c:Class)-[r:USES {type: 'generic_param'}]->(target:Class)
+            WHERE c.name = 'GenericTypeService' AND r.context CONTAINS 'field'
+            RETURN c.name as className, target.name as genericType, r.context as context
+            """;
+        
+        QueryResult fieldResults = cypherQueryService.executeQuery(fieldGenericQuery, java.util.Map.of(), new CypherQueryRequest.QueryOptions());
+        
+        // Should find generic type dependencies from fields (String, Integer, Long, Double, Boolean, Object)
+        assertTrue(fieldResults.getResults().size() >= 4, 
+                  "Expected field-level generic type dependencies, found: " + fieldResults.getResults().size());
+
+        // Test 2: Query for method return type generic dependencies  
+        String returnGenericQuery = """
+            MATCH (c:Class)-[r:USES {type: 'generic_param'}]->(target:Class)
+            WHERE c.name = 'GenericTypeService' AND r.context CONTAINS 'method_return' AND target.name = 'User'
+            RETURN c.name as className, target.name as genericType, r.context as context
+            """;
+        
+        QueryResult returnResults = cypherQueryService.executeQuery(returnGenericQuery, java.util.Map.of(), new CypherQueryRequest.QueryOptions());
+        
+        // Should find User class as generic type argument in List<User> return type
+        assertTrue(returnResults.getResults().size() >= 1,
+                  "Expected return type generic dependencies, found: " + returnResults.getResults().size());
+
+        // Test 3: Query for method parameter generic dependencies
+        String paramGenericQuery = """
+            MATCH (c:Class)-[r:USES {type: 'generic_param'}]->(target:Class)  
+            WHERE c.name = 'GenericTypeService' AND r.context CONTAINS 'method_param'
+            RETURN c.name as className, target.name as genericType, r.context as context
+            """;
+        
+        QueryResult paramResults = cypherQueryService.executeQuery(paramGenericQuery, java.util.Map.of(), new CypherQueryRequest.QueryOptions());
+        
+        // Should find generic type dependencies from method parameters 
+        assertTrue(paramResults.getResults().size() >= 2,
+                  "Expected parameter generic dependencies, found: " + paramResults.getResults().size());
+
+        // Test 4: Verify specific User class dependency is detected
+        String userDependencyQuery = """
+            MATCH (source)-[r:USES]->(target:Class)
+            WHERE target.name = 'User' AND r.type = 'generic_param'
+            RETURN source.name as sourceName, r.type as relationshipType, r.context as context
+            """;
+        
+        QueryResult userResults = cypherQueryService.executeQuery(userDependencyQuery, java.util.Map.of(), new CypherQueryRequest.QueryOptions());
+        
+        // Should find User referenced in multiple generic contexts
+        assertTrue(userResults.getResults().size() >= 1,
+                  "Expected User class to be referenced in generic types, found: " + userResults.getResults().size());
+
+        // Test 5: Verify overall generic type system is working by checking total unique generic parameters
+        String allGenericQuery = """
+            MATCH (source)-[r:USES {type: 'generic_param'}]->(target:Class)
+            WHERE source.name = 'GenericTypeService'
+            RETURN DISTINCT target.name as genericType
+            ORDER BY target.name
+            """;
+        
+        QueryResult allGenericResults = cypherQueryService.executeQuery(allGenericQuery, java.util.Map.of(), new CypherQueryRequest.QueryOptions());
+        
+        // Should find multiple distinct generic type parameters (String, Integer, Long, Double, Boolean, Object, User, List, T)
+        assertTrue(allGenericResults.getResults().size() >= 6,
+                  "Expected multiple unique generic type parameters, found: " + allGenericResults.getResults().size());
+    }
 }

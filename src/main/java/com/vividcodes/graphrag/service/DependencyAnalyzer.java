@@ -576,17 +576,22 @@ public class DependencyAnalyzer {
      */
     private String determineFrameworkType(final String fullyQualifiedName) {
         if (fullyQualifiedName.startsWith("java.lang.")) {
-            return "java-core";
+            return "Java";
         } else if (fullyQualifiedName.startsWith("org.springframework.")) {
-            return "spring";
-        } else if (fullyQualifiedName.startsWith("org.junit.")) {
-            return "junit";
-        } else if (fullyQualifiedName.startsWith("jakarta.")) {
-            return "jakarta";
-        } else if (fullyQualifiedName.startsWith("javax.")) {
-            return "javax";
+            return "Spring";
+        } else if (fullyQualifiedName.startsWith("org.junit.") ||
+                   fullyQualifiedName.startsWith("junit.")) {
+            return "JUnit";
+        } else if (fullyQualifiedName.startsWith("jakarta.validation.")) {
+            return "Validation";
+        } else if (fullyQualifiedName.startsWith("javax.validation.")) {
+            return "Validation";
+        } else if (fullyQualifiedName.startsWith("jakarta.persistence.")) {
+            return "JPA";
+        } else if (fullyQualifiedName.startsWith("javax.persistence.")) {
+            return "JPA";
         } else if (fullyQualifiedName.startsWith("com.fasterxml.jackson.")) {
-            return "jackson";
+            return "Jackson";
         }
         return null;
     }
