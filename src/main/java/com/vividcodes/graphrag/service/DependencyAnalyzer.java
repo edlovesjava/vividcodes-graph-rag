@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.body.Parameter;
 import com.github.javaparser.ast.expr.AnnotationExpr;
 import com.github.javaparser.ast.expr.MarkerAnnotationExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
@@ -383,6 +384,66 @@ public class DependencyAnalyzer {
 
         LOGGER.debug("Created annotation relationship: {} -> {} ({})", 
                    getElementName(targetElement), annotationName, targetType);
+    }
+
+    /**
+     * Process parameter-level annotation expressions and create annotation nodes and USES relationships.
+     * 
+     * @param annotationExpr The annotation expression to process
+     * @param parameter The parameter being annotated
+     * @param methodNode The method containing the parameter
+     * @param importedClasses Map of imported classes for annotation resolution
+     */
+    public void processParameterAnnotation(final AnnotationExpr annotationExpr,
+                                          final Parameter parameter,
+                                          final MethodNode methodNode,
+                                          final Map<String, String> importedClasses) {
+        if (annotationExpr == null || parameter == null || methodNode == null) {
+            return;
+        }
+
+        final String annotationName = annotationExpr.getNameAsString();
+        LOGGER.debug("Processing parameter annotation: {} on parameter: {}", annotationName, parameter.getName());
+
+        // Resolve annotation fully qualified name
+        final String fullyQualifiedName = typeResolver.resolveClassName(annotationName, importedClasses);
+        
+        // Create annotation node
+        final AnnotationNode annotationNode = new AnnotationNode(annotationName, fullyQualifiedName);
+        annotationNode.setTargetType("parameter");
+        
+        // Set framework properties
+        annotationNode.setIsFramework(isFrameworkAnnotation(fullyQualifiedName));
+        annotationNode.setFrameworkType(determineFrameworkType(fullyQualifiedName));
+        
+        // Extract annotation attributes based on type
+        if (annotationExpr instanceof MarkerAnnotationExpr) {
+            // No attributes for marker annotations
+            LOGGER.debug("Parameter marker annotation: {}", annotationName);
+        } else if (annotationExpr instanceof SingleMemberAnnotationExpr) {
+            final SingleMemberAnnotationExpr singleMember = (SingleMemberAnnotationExpr) annotationExpr;
+            final String value = cleanAttributeValue(singleMember.getMemberValue().toString());
+            annotationNode.addAttribute("value", value);
+            LOGGER.debug("Parameter single member annotation: {} with value: {}", annotationName, value);
+        } else if (annotationExpr instanceof NormalAnnotationExpr) {
+            final NormalAnnotationExpr normalAnnotation = (NormalAnnotationExpr) annotationExpr;
+            normalAnnotation.getPairs().forEach(pair -> {
+                final String value = cleanAttributeValue(pair.getValue().toString());
+                annotationNode.addAttribute(pair.getNameAsString(), value);
+                LOGGER.debug("Parameter normal annotation: {} with attribute: {} = {}", 
+                           annotationName, pair.getNameAsString(), value);
+            });
+        }
+
+        // Save annotation node
+        graphService.saveAnnotation(annotationNode);
+
+        // Create USES relationship from method to annotation for parameter
+        final String context = "parameter: " + parameter.getName() + " (method: " + methodNode.getName() + ")";
+        relationshipManager.createMethodAnnotationUsesRelationship(methodNode, annotationNode, context);
+
+        LOGGER.debug("Created parameter annotation relationship: method {} -> annotation {} for parameter {}", 
+                   methodNode.getName(), annotationName, parameter.getName());
     }
 
     /**

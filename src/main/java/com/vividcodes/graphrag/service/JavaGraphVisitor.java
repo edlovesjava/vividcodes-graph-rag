@@ -209,7 +209,7 @@ public class JavaGraphVisitor extends VoidVisitorAdapter<Void> {
             // Process parameter-level annotations
             methodDecl.getParameters().forEach(parameter -> {
                 parameter.getAnnotations().forEach(annotation -> {
-                    dependencyAnalyzer.processParameterAnnotation(annotation, currentClass, parameter, importedClasses);
+                    dependencyAnalyzer.processParameterAnnotation(annotation, parameter, methodNode, importedClasses);
                 });
             });
             

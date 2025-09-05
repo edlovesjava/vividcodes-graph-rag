@@ -241,9 +241,19 @@ class JavaParserServiceTest {
         public <T> org.springframework.beans.factory.ObjectProvider<T> getBeanProvider(Class<T> requiredType) {
             return null;
         }
+        
+        @Override
+        public <T> org.springframework.beans.factory.ObjectProvider<T> getBeanProvider(Class<T> requiredType, boolean allowEagerInit) {
+            return null;
+        }
 
         @Override
         public <T> org.springframework.beans.factory.ObjectProvider<T> getBeanProvider(org.springframework.core.ResolvableType requiredType) {
+            return null;
+        }
+        
+        @Override
+        public <T> org.springframework.beans.factory.ObjectProvider<T> getBeanProvider(org.springframework.core.ResolvableType requiredType, boolean allowEagerInit) {
             return null;
         }
 
