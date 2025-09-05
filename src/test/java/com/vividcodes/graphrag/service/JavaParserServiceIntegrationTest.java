@@ -7,9 +7,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-
 import org.springframework.test.util.ReflectionTestUtils;
 import com.vividcodes.graphrag.config.ParserConfig;
+import com.vividcodes.graphrag.model.graph.AnnotationNode;
 
 class JavaParserServiceIntegrationTest {
     
@@ -116,6 +116,11 @@ class JavaParserServiceIntegrationTest {
         @Override
         public void saveField(com.vividcodes.graphrag.model.graph.FieldNode fieldNode) {
             saveFieldCount.incrementAndGet();
+        }
+        
+        @Override
+        public void saveAnnotation(AnnotationNode annotationNode) {
+            // Mock implementation - do nothing
         }
         
         @Override
@@ -412,6 +417,11 @@ class JavaParserServiceIntegrationTest {
         }
 
         @Override
+        public org.springframework.beans.factory.config.AutowireCapableBeanFactory getAutowireCapableBeanFactory() throws IllegalStateException {
+            return null;
+        }
+
+        @Override
         public org.springframework.core.io.Resource getResource(String location) {
             return null;
         }
@@ -451,18 +461,17 @@ class JavaParserServiceIntegrationTest {
             // Create a simple mock that implements the essential methods
             return new com.vividcodes.graphrag.service.JavaGraphVisitor(
                 new ParserConfig(),
-                new SimpleMockGraphService(),
+                new TrackingMockGraphService(),
                 new com.vividcodes.graphrag.service.NodeFactory(new com.vividcodes.graphrag.service.TypeResolver()),
-                new com.vividcodes.graphrag.service.RelationshipManager(new SimpleMockGraphService()),
+                new com.vividcodes.graphrag.service.RelationshipManager(new TrackingMockGraphService()),
                 new com.vividcodes.graphrag.service.DependencyAnalyzer(
                     new com.vividcodes.graphrag.service.TypeResolver(),
                     new com.vividcodes.graphrag.service.NodeFactory(new com.vividcodes.graphrag.service.TypeResolver()),
-                    new com.vividcodes.graphrag.service.RelationshipManager(new SimpleMockGraphService()),
-                    new SimpleMockGraphService()
+                    new com.vividcodes.graphrag.service.RelationshipManager(new TrackingMockGraphService()),
+                    new TrackingMockGraphService()
                 ),
                 new com.vividcodes.graphrag.service.TypeResolver()
             );
         }
     }
-}
 } 

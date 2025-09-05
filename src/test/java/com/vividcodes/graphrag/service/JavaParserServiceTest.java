@@ -9,7 +9,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-
 import org.springframework.test.util.ReflectionTestUtils;
 import com.vividcodes.graphrag.config.ParserConfig;
 
@@ -107,6 +106,11 @@ class JavaParserServiceTest {
         
         @Override
         public void saveField(com.vividcodes.graphrag.model.graph.FieldNode fieldNode) {
+            // Mock implementation - do nothing
+        }
+        
+        @Override
+        public void saveAnnotation(com.vividcodes.graphrag.model.graph.AnnotationNode annotationNode) {
             // Mock implementation - do nothing
         }
         
@@ -401,6 +405,11 @@ class JavaParserServiceTest {
         @Override
         public org.springframework.core.io.Resource[] getResources(String locationPattern) throws java.io.IOException {
             return new org.springframework.core.io.Resource[0];
+        }
+
+        @Override
+        public org.springframework.beans.factory.config.AutowireCapableBeanFactory getAutowireCapableBeanFactory() throws IllegalStateException {
+            return null;
         }
 
         @Override

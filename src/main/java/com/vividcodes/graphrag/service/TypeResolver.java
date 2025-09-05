@@ -153,6 +153,130 @@ public class TypeResolver {
      * @return The fully qualified name, or the simple name if not found in imports
      */
     public String resolveClassName(final String className, final java.util.Map<String, String> importedClasses) {
-        return importedClasses.getOrDefault(className, className);
+        // First check imported classes
+        if (importedClasses.containsKey(className)) {
+            return importedClasses.get(className);
+        }
+        
+        // Then check for built-in Java annotations
+        final String builtInAnnotation = resolveBuiltInAnnotation(className);
+        if (!builtInAnnotation.equals(className)) {
+            return builtInAnnotation;
+        }
+        
+        return className;
+    }
+    
+    /**
+     * Resolve built-in Java annotations to their fully qualified names.
+     * 
+     * @param annotationName The simple annotation name
+     * @return The fully qualified name if it's a built-in annotation, otherwise the original name
+     */
+    private String resolveBuiltInAnnotation(final String annotationName) {
+        switch (annotationName) {
+            case "Override":
+                return "java.lang.Override";
+            case "Deprecated":
+                return "java.lang.Deprecated";
+            case "SuppressWarnings":
+                return "java.lang.SuppressWarnings";
+            case "FunctionalInterface":
+                return "java.lang.FunctionalInterface";
+            case "SafeVarargs":
+                return "java.lang.SafeVarargs";
+            case "Target":
+                return "java.lang.annotation.Target";
+            case "Retention":
+                return "java.lang.annotation.Retention";
+            case "Documented":
+                return "java.lang.annotation.Documented";
+            case "Inherited":
+                return "java.lang.annotation.Inherited";
+            case "Repeatable":
+                return "java.lang.annotation.Repeatable";
+            default:
+                return annotationName;
+        }
+    }
+    
+    /**
+     * Extract generic type arguments from a type declaration.
+     * 
+     * @param typeDeclaration The type declaration string (e.g., "List<String>", "Map<String, Object>")
+     * @return List of generic type arguments, or empty list if no generics
+     */
+    public java.util.List<String> extractGenericTypeArguments(final String typeDeclaration) {
+        final java.util.List<String> typeArguments = new java.util.ArrayList<>();
+        
+        if (typeDeclaration == null || typeDeclaration.isEmpty()) {
+            return typeArguments;
+        }
+        
+        String typeName = typeDeclaration.trim();
+        
+        // Find the generic type parameters
+        final int genericStart = typeName.indexOf('<');
+        final int genericEnd = typeName.lastIndexOf('>');
+        
+        if (genericStart >= 0 && genericEnd > genericStart) {
+            final String genericPart = typeName.substring(genericStart + 1, genericEnd);
+            
+            // Split on commas, but handle nested generics properly
+            typeArguments.addAll(splitGenericArguments(genericPart));
+        }
+        
+        return typeArguments;
+    }
+    
+    /**
+     * Split generic arguments handling nested generics and wildcards.
+     * 
+     * @param genericPart The content inside <> brackets
+     * @return List of individual type arguments
+     */
+    private java.util.List<String> splitGenericArguments(final String genericPart) {
+        final java.util.List<String> arguments = new java.util.ArrayList<>();
+        
+        if (genericPart == null || genericPart.trim().isEmpty()) {
+            return arguments;
+        }
+        
+        int depth = 0;
+        int start = 0;
+        final char[] chars = genericPart.toCharArray();
+        
+        for (int i = 0; i < chars.length; i++) {
+            final char ch = chars[i];
+            
+            if (ch == '<') {
+                depth++;
+            } else if (ch == '>') {
+                depth--;
+            } else if (ch == ',' && depth == 0) {
+                // Found a separator at the top level
+                final String argument = genericPart.substring(start, i).trim();
+                if (!argument.isEmpty()) {
+                    // Extract simple type name from the argument
+                    final String simpleArgument = extractSimpleTypeName(argument);
+                    if (!simpleArgument.isEmpty() && !isPrimitiveType(simpleArgument)) {
+                        arguments.add(simpleArgument);
+                    }
+                }
+                start = i + 1;
+            }
+        }
+        
+        // Add the last argument
+        final String lastArgument = genericPart.substring(start).trim();
+        if (!lastArgument.isEmpty()) {
+            // Extract simple type name from the argument
+            final String simpleLastArgument = extractSimpleTypeName(lastArgument);
+            if (!simpleLastArgument.isEmpty() && !isPrimitiveType(simpleLastArgument)) {
+                arguments.add(simpleLastArgument);
+            }
+        }
+        
+        return arguments;
     }
 }

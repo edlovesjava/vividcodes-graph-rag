@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.vividcodes.graphrag.model.graph.AnnotationNode;
 import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
 import com.vividcodes.graphrag.model.graph.MethodNode;
@@ -372,6 +373,13 @@ class GraphRelationshipValidationTest {
             // Mock implementation - just validate the node
             assertNotNull(fieldNode, "FieldNode should not be null");
             assertNotNull(fieldNode.getId(), "FieldNode ID should not be null");
+        }
+        
+        @Override
+        public void saveAnnotation(AnnotationNode annotationNode) {
+            // Mock implementation - just validate the node
+            assertNotNull(annotationNode, "AnnotationNode should not be null");
+            assertNotNull(annotationNode.getId(), "AnnotationNode ID should not be null");
         }
         
         @Override

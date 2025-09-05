@@ -1,11 +1,13 @@
 package com.vividcodes.graphrag.service;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import com.vividcodes.graphrag.model.graph.AnnotationNode;
 import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
 import com.vividcodes.graphrag.model.graph.MethodNode;
@@ -241,5 +243,119 @@ public class RelationshipManager {
 
         graphService.createRelationship(method.getId(), field.getId(), "USES");
         LOGGER.debug("Created USES relationship: {} -> {}", method.getName(), field.getName());
+    }
+
+    /**
+     * Create a USES relationship from a class to an annotation.
+     * 
+     * @param fromClass The class using the annotation
+     * @param annotation The annotation being used
+     * @param context Additional context information
+     */
+    public void createClassAnnotationUsesRelationship(final ClassNode fromClass,
+                                                    final AnnotationNode annotation,
+                                                    final String context) {
+        if (fromClass == null || annotation == null) {
+            LOGGER.warn("Cannot create class-annotation USES relationship: fromClass or annotation is null");
+            return;
+        }
+
+        final Map<String, Object> properties = Map.of(
+            "type", "annotation",
+            "targetType", "class",
+            "context", context != null ? context : "",
+            "annotationAttributes", annotation.getAttributes().toString(),
+            "frameworkType", annotation.getFrameworkType() != null ? annotation.getFrameworkType() : ""
+        );
+
+        graphService.createRelationship(fromClass.getId(), annotation.getId(), "USES", properties);
+        LOGGER.debug("Created annotation USES relationship: {} -> {} (class-level)", 
+                   fromClass.getName(), annotation.getName());
+    }
+
+    /**
+     * Create a USES relationship from a method to an annotation.
+     * 
+     * @param fromMethod The method using the annotation
+     * @param annotation The annotation being used
+     * @param context Additional context information
+     */
+    public void createMethodAnnotationUsesRelationship(final MethodNode fromMethod,
+                                                     final AnnotationNode annotation,
+                                                     final String context) {
+        if (fromMethod == null || annotation == null) {
+            LOGGER.warn("Cannot create method-annotation USES relationship: fromMethod or annotation is null");
+            return;
+        }
+
+        final Map<String, Object> properties = Map.of(
+            "type", "annotation",
+            "targetType", "method",
+            "context", context != null ? context : "",
+            "annotationAttributes", annotation.getAttributes().toString(),
+            "frameworkType", annotation.getFrameworkType() != null ? annotation.getFrameworkType() : ""
+        );
+
+        graphService.createRelationship(fromMethod.getId(), annotation.getId(), "USES", properties);
+        LOGGER.debug("Created annotation USES relationship: {} -> {} (method-level)", 
+                   fromMethod.getName(), annotation.getName());
+    }
+
+    /**
+     * Create a USES relationship from a field to an annotation.
+     * 
+     * @param fromField The field using the annotation
+     * @param annotation The annotation being used
+     * @param context Additional context information
+     */
+    public void createFieldAnnotationUsesRelationship(final FieldNode fromField,
+                                                    final AnnotationNode annotation,
+                                                    final String context) {
+        if (fromField == null || annotation == null) {
+            LOGGER.warn("Cannot create field-annotation USES relationship: fromField or annotation is null");
+            return;
+        }
+
+        final Map<String, Object> properties = Map.of(
+            "type", "annotation",
+            "targetType", "field",
+            "context", context != null ? context : "",
+            "annotationAttributes", annotation.getAttributes().toString(),
+            "frameworkType", annotation.getFrameworkType() != null ? annotation.getFrameworkType() : ""
+        );
+
+        graphService.createRelationship(fromField.getId(), annotation.getId(), "USES", properties);
+        LOGGER.debug("Created annotation USES relationship: {} -> {} (field-level)", 
+                   fromField.getName(), annotation.getName());
+    }
+    
+    /**
+     * Create USES relationship for generic type parameter dependencies.
+     * 
+     * @param sourceClass The class that uses the generic type
+     * @param targetClass The class representing the generic type argument
+     * @param context The usage context description
+     * @param typeArgument The generic type argument name
+     */
+    public void createGenericTypeUsesRelationship(final ClassNode sourceClass, 
+                                                 final ClassNode targetClass, 
+                                                 final String context,
+                                                 final String typeArgument) {
+        if (sourceClass == null || targetClass == null) {
+            LOGGER.warn("Cannot create generic type USES relationship: source or target class is null");
+            return;
+        }
+
+        final Map<String, Object> properties = new HashMap<>();
+        properties.put("type", "generic_param");
+        properties.put("context", context != null ? context : "generic type usage");
+        properties.put("typeArgument", typeArgument);
+        properties.put("fullyQualifiedName", targetClass.getFullyQualifiedName());
+        properties.put("isExternal", targetClass.getIsExternal());
+        properties.put("count", 1);
+
+        graphService.createRelationship(sourceClass.getId(), targetClass.getId(), "USES", properties);
+        LOGGER.debug("Created generic type USES relationship: {} -> {} ({})", 
+                   sourceClass.getName(), targetClass.getName(), typeArgument);
     }
 }

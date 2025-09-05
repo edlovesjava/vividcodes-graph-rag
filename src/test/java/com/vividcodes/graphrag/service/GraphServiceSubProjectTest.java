@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.vividcodes.graphrag.model.graph.AnnotationNode;
 import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
 import com.vividcodes.graphrag.model.graph.MethodNode;
@@ -220,6 +221,9 @@ class GraphServiceSubProjectTest {
         
         @Override
         public void saveField(FieldNode fieldNode) {}
+        
+        @Override
+        public void saveAnnotation(AnnotationNode annotationNode) {}
         
         @Override
         public void saveRepository(RepositoryNode repositoryNode) {}

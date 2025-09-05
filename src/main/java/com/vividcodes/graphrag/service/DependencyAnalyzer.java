@@ -8,9 +8,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.github.javaparser.ast.expr.MarkerAnnotationExpr;
 import com.github.javaparser.ast.expr.MethodCallExpr;
+import com.github.javaparser.ast.expr.NormalAnnotationExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
+import com.vividcodes.graphrag.model.graph.AnnotationNode;
 import com.vividcodes.graphrag.model.graph.ClassNode;
+import com.vividcodes.graphrag.model.graph.FieldNode;
 import com.vividcodes.graphrag.model.graph.MethodNode;
 
 /**
@@ -183,11 +189,14 @@ public class DependencyAnalyzer {
         // Create or get the class node for the field type
         final ClassNode fieldTypeClass = getOrCreateClassNode(simpleTypeName, fullyQualifiedName);
 
-        // Create USES relationship
+        // Create USES relationship for main type
         relationshipManager.createFieldTypeUsesRelationship(
             currentClass, fieldTypeClass, fieldName, fieldTypeName);
         LOGGER.debug("Created USES relationship for field type: {} -> {} (field: {} type: {})", 
                    currentClass.getName(), simpleTypeName, fieldName, fieldTypeName);
+        
+        // Handle generic type parameters
+        detectGenericTypeDependencies(fieldTypeName, currentClass, "field", fieldName, importedClasses);
     }
 
     /**
@@ -221,11 +230,14 @@ public class DependencyAnalyzer {
             // Create or get the class node for the return type
             final ClassNode returnTypeClass = getOrCreateClassNode(simpleReturnType, fullyQualifiedName);
 
-            // Create USES relationship
+            // Create USES relationship for main return type
             relationshipManager.createMethodSignatureUsesRelationship(
                 currentClass, returnTypeClass, methodName, "return_type", returnType);
             LOGGER.debug("Created USES relationship for return type: {} -> {} (method: {} returns: {})", 
                        currentClass.getName(), simpleReturnType, methodName, returnType);
+            
+            // Handle generic type parameters in return type
+            detectGenericTypeDependencies(returnType, currentClass, "method_return", methodName, importedClasses);
         }
 
         // Detect parameter type dependencies
@@ -244,12 +256,16 @@ public class DependencyAnalyzer {
                 // Create or get the class node for the parameter type
                 final ClassNode paramTypeClass = getOrCreateClassNode(simpleParamType, fullyQualifiedName);
 
-                // Create USES relationship
+                // Create USES relationship for main parameter type
                 relationshipManager.createMethodSignatureUsesRelationship(
                     currentClass, paramTypeClass, methodName, "parameter_type", 
                     "param: " + paramName + " type: " + paramType);
                 LOGGER.debug("Created USES relationship for parameter type: {} -> {} (method: {} param: {} type: {})", 
                            currentClass.getName(), simpleParamType, methodName, paramName, paramType);
+                
+                // Handle generic type parameters in parameter type
+                detectGenericTypeDependencies(paramType, currentClass, "method_param", 
+                    methodName + "." + paramName, importedClasses);
             }
         });
     }
@@ -298,5 +314,241 @@ public class DependencyAnalyzer {
         graphService.saveClass(internalClass);
         
         return internalClass;
+    }
+
+    /**
+     * Process annotation expressions and create annotation nodes and USES relationships.
+     * 
+     * @param annotationExpr The annotation expression to process
+     * @param targetElement The element annotated (class, method, field)
+     * @param targetType The type of target ("class", "method", "field", "parameter")
+     * @param importedClasses Map of imported classes for annotation resolution
+     */
+    public void processAnnotation(final AnnotationExpr annotationExpr,
+                                final Object targetElement,
+                                final String targetType,
+                                final Map<String, String> importedClasses) {
+        if (annotationExpr == null || targetElement == null) {
+            return;
+        }
+
+        final String annotationName = annotationExpr.getNameAsString();
+        LOGGER.debug("Processing annotation: {} on {}", annotationName, targetType);
+
+        // Resolve annotation fully qualified name
+        final String fullyQualifiedName = typeResolver.resolveClassName(annotationName, importedClasses);
+        
+        // Create annotation node
+        final AnnotationNode annotationNode = new AnnotationNode(annotationName, fullyQualifiedName);
+        annotationNode.setTargetType(targetType);
+        
+        // Set framework properties
+        annotationNode.setIsFramework(isFrameworkAnnotation(fullyQualifiedName));
+        annotationNode.setFrameworkType(determineFrameworkType(fullyQualifiedName));
+        
+        // Extract annotation attributes based on type
+        if (annotationExpr instanceof MarkerAnnotationExpr) {
+            // No attributes for marker annotations
+            LOGGER.debug("Marker annotation: {}", annotationName);
+        } else if (annotationExpr instanceof SingleMemberAnnotationExpr) {
+            final SingleMemberAnnotationExpr singleMember = (SingleMemberAnnotationExpr) annotationExpr;
+            final String value = cleanAttributeValue(singleMember.getMemberValue().toString());
+            annotationNode.addAttribute("value", value);
+            LOGGER.debug("Single member annotation: {} with value: {}", annotationName, value);
+        } else if (annotationExpr instanceof NormalAnnotationExpr) {
+            final NormalAnnotationExpr normalAnnotation = (NormalAnnotationExpr) annotationExpr;
+            normalAnnotation.getPairs().forEach(pair -> {
+                final String value = cleanAttributeValue(pair.getValue().toString());
+                annotationNode.addAttribute(pair.getNameAsString(), value);
+                LOGGER.debug("Normal annotation: {} with attribute: {} = {}", 
+                           annotationName, pair.getNameAsString(), value);
+            });
+        }
+
+        // Save annotation node
+        graphService.saveAnnotation(annotationNode);
+
+        // Create USES relationship based on target type
+        final String context = createAnnotationContext(targetElement, targetType);
+        if (targetElement instanceof ClassNode) {
+            relationshipManager.createClassAnnotationUsesRelationship(
+                (ClassNode) targetElement, annotationNode, context);
+        } else if (targetElement instanceof MethodNode) {
+            relationshipManager.createMethodAnnotationUsesRelationship(
+                (MethodNode) targetElement, annotationNode, context);
+        } else if (targetElement instanceof FieldNode) {
+            relationshipManager.createFieldAnnotationUsesRelationship(
+                (FieldNode) targetElement, annotationNode, context);
+        }
+
+        LOGGER.debug("Created annotation relationship: {} -> {} ({})", 
+                   getElementName(targetElement), annotationName, targetType);
+    }
+
+    /**
+     * Detect and create relationships for generic type parameters.
+     * 
+     * @param typeDeclaration The type declaration that may contain generics
+     * @param currentClass The class containing the usage
+     * @param usageContext The context of usage (field, method_return, method_param)
+     * @param elementName The name of the element (field name, method name, etc.)
+     * @param importedClasses Map of imported classes for resolution
+     */
+    public void detectGenericTypeDependencies(final String typeDeclaration,
+                                            final ClassNode currentClass,
+                                            final String usageContext,
+                                            final String elementName,
+                                            final Map<String, String> importedClasses) {
+        if (typeDeclaration == null || currentClass == null) {
+            return;
+        }
+        
+        // Extract generic type arguments
+        final java.util.List<String> typeArguments = typeResolver.extractGenericTypeArguments(typeDeclaration);
+        
+        if (!typeArguments.isEmpty()) {
+            LOGGER.debug("Found {} generic type arguments in {}: {}", 
+                       typeArguments.size(), typeDeclaration, typeArguments);
+            
+            typeArguments.forEach(typeArgument -> {
+                // Resolve fully qualified name
+                final String fullyQualifiedName = typeResolver.resolveClassName(typeArgument, importedClasses);
+                
+                // Create or get class node for the generic type argument
+                final ClassNode genericTypeClass = getOrCreateClassNode(typeArgument, fullyQualifiedName);
+                
+                // Create USES relationship with generic_param type
+                final String context = createGenericTypeContext(usageContext, elementName, typeDeclaration);
+                relationshipManager.createGenericTypeUsesRelationship(
+                    currentClass, genericTypeClass, context, typeArgument);
+                
+                LOGGER.debug("Created USES relationship for generic type: {} -> {} (context: {})", 
+                           currentClass.getName(), typeArgument, context);
+                
+                // Recursively check for nested generics in this type argument
+                if (typeArgument.contains("<")) {
+                    detectGenericTypeDependencies(typeArgument, currentClass, 
+                        "nested_generic", elementName, importedClasses);
+                }
+            });
+        }
+    }
+    
+    /**
+     * Create context description for generic type usage.
+     * 
+     * @param usageContext The usage context
+     * @param elementName The element name
+     * @param typeDeclaration The full type declaration
+     * @return Context description
+     */
+    private String createGenericTypeContext(final String usageContext, 
+                                          final String elementName, 
+                                          final String typeDeclaration) {
+        return String.format("%s %s <%s>", usageContext, elementName, typeDeclaration);
+    }
+    
+    /**
+     * Create context string for annotation usage.
+     * 
+     * @param targetElement The annotated element
+     * @param targetType The target type
+     * @return Context description
+     */
+    private String createAnnotationContext(final Object targetElement, final String targetType) {
+        switch (targetType) {
+            case "class":
+                return "class-level annotation";
+            case "method":
+                if (targetElement instanceof MethodNode) {
+                    return "method: " + ((MethodNode) targetElement).getName();
+                }
+                return "method-level annotation";
+            case "field":
+                if (targetElement instanceof FieldNode) {
+                    return "field: " + ((FieldNode) targetElement).getName();
+                }
+                return "field-level annotation";
+            default:
+                return targetType + "-level annotation";
+        }
+    }
+
+    /**
+     * Get element name for logging purposes.
+     * 
+     * @param element The element (ClassNode, MethodNode, or FieldNode)
+     * @return The element name
+     */
+    private String getElementName(final Object element) {
+        if (element instanceof ClassNode) {
+            return ((ClassNode) element).getName();
+        } else if (element instanceof MethodNode) {
+            return ((MethodNode) element).getName();
+        } else if (element instanceof FieldNode) {
+            return ((FieldNode) element).getName();
+        }
+        return element.toString();
+    }
+    
+    /**
+     * Determine if an annotation is a framework annotation.
+     * 
+     * @param fullyQualifiedName The fully qualified annotation name
+     * @return true if it's a framework annotation, false otherwise
+     */
+    private boolean isFrameworkAnnotation(final String fullyQualifiedName) {
+        return fullyQualifiedName.startsWith("java.lang.")
+            || fullyQualifiedName.startsWith("java.lang.annotation.")
+            || fullyQualifiedName.startsWith("org.springframework.")
+            || fullyQualifiedName.startsWith("org.junit.")
+            || fullyQualifiedName.startsWith("jakarta.")
+            || fullyQualifiedName.startsWith("javax.")
+            || fullyQualifiedName.startsWith("com.fasterxml.jackson.");
+    }
+    
+    /**
+     * Determine the framework type based on the annotation package.
+     * 
+     * @param fullyQualifiedName The fully qualified annotation name
+     * @return The framework type or null if not a framework annotation
+     */
+    private String determineFrameworkType(final String fullyQualifiedName) {
+        if (fullyQualifiedName.startsWith("java.lang.")) {
+            return "java-core";
+        } else if (fullyQualifiedName.startsWith("org.springframework.")) {
+            return "spring";
+        } else if (fullyQualifiedName.startsWith("org.junit.")) {
+            return "junit";
+        } else if (fullyQualifiedName.startsWith("jakarta.")) {
+            return "jakarta";
+        } else if (fullyQualifiedName.startsWith("javax.")) {
+            return "javax";
+        } else if (fullyQualifiedName.startsWith("com.fasterxml.jackson.")) {
+            return "jackson";
+        }
+        return null;
+    }
+    
+    /**
+     * Clean attribute values by removing quotes and unnecessary characters.
+     * 
+     * @param rawValue The raw attribute value from JavaParser
+     * @return The cleaned attribute value
+     */
+    private String cleanAttributeValue(final String rawValue) {
+        if (rawValue == null) {
+            return null;
+        }
+        
+        String cleaned = rawValue.trim();
+        
+        // Remove surrounding quotes if present
+        if ((cleaned.startsWith("\"") && cleaned.endsWith("\""))
+            || (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+            cleaned = cleaned.substring(1, cleaned.length() - 1);
+        }
+        
+        return cleaned;
     }
 }

@@ -1,6 +1,8 @@
 # STORY_013: Class Dependency Analysis Enhancement
 
-## 🎯 **Current Status: 85% COMPLETE**
+## 🎯 **Current Status: 85% COMPLETE - Phase 2 Planning Complete**
+
+**Next Steps**: Ready to implement annotation tracking, generic type parameters, and framework pattern detection based on detailed implementation plan below.
 
 ### ✅ **COMPLETED FEATURES:**
 
@@ -12,11 +14,55 @@
 - **Performance Optimization**: Class name caching, batch operations, lazy loading
 - **Backward Compatibility**: Existing relationships preserved, API compatibility maintained
 
-### 🔄 **IN PROGRESS:**
+### 🔄 **PHASE 2 COMPLETION PLAN:**
 
-- Annotation usage tracking
-- Generic type parameter handling
-- Framework-specific dependency detection (Spring, JUnit)
+#### **Current State Analysis**
+
+- **✅ Completed**: Import tracking, static method calls, object instantiation, field types, method signatures
+- **🔄 In Progress**: Annotation usage tracking, generic type parameter handling, framework-specific patterns
+- **📋 Missing**: Comprehensive annotation support, generic type arguments extraction, Spring/JUnit detection
+
+#### **Detailed Implementation Plan**
+
+**1. Annotation Usage Tracking Implementation**
+
+- Add annotation visitor methods to `JavaGraphVisitor`:
+  - `visit(AnnotationExpr, Void)` for base annotation handling
+  - `visit(MarkerAnnotationExpr, Void)` for simple annotations (e.g., `@Override`)
+  - `visit(SingleMemberAnnotationExpr, Void)` for value annotations (e.g., `@Value("config.property")`)
+  - `visit(NormalAnnotationExpr, Void)` for complex annotations (e.g., `@RequestMapping(path="/api", method=GET)`)
+- Create annotation nodes in graph with properties:
+  - `name`: annotation name (e.g., "Service", "Autowired")
+  - `fullyQualifiedName`: complete annotation class name
+  - `attributes`: annotation parameters and values
+  - `targetType`: what the annotation is applied to (class, method, field, parameter)
+- Add USES relationships between classes/methods/fields and their annotations
+- Track Spring framework annotations as external dependencies
+
+**2. Generic Type Parameter Enhancement**
+
+- Enhance `TypeResolver` with new methods:
+  - `extractGenericTypeParameters(String typeDeclaration)`: extract type arguments from generics
+  - `handleNestedGenerics(String typeDeclaration)`: handle complex nested generics
+- Update dependency detection to create USES relationships for generic type parameters:
+  - `List<String>` creates USES relationship to both `List` and `String`
+  - `Map<String, List<Entity>>` creates relationships to `Map`, `String`, `List`, and `Entity`
+- Enhance relationship metadata to include generic type information:
+  - `genericContainer`: the generic class (e.g., "List")
+  - `typeArguments`: array of type arguments (e.g., ["String"])
+  - `genericDepth`: nesting level for complex generics
+
+**3. Framework Pattern Detection**
+
+- Add `FrameworkPatternDetector` service for specialized framework analysis
+- Implement Spring annotation detection:
+  - `@Autowired`, `@Service`, `@Repository`, `@Component`, `@Controller`
+  - `@Value`, `@ConfigurationProperties`, `@Bean`, `@Configuration`
+  - `@RequestMapping`, `@GetMapping`, `@PostMapping`, etc.
+- Add JUnit annotation detection:
+  - `@Test`, `@BeforeEach`, `@AfterEach`, `@BeforeAll`, `@AfterAll`
+  - `@ParameterizedTest`, `@Mock`, `@MockBean`
+- Create specific relationship metadata for framework usage patterns
 
 ### 📋 **REMAINING WORK:**
 
@@ -59,8 +105,16 @@ Enhance the Java parser to capture comprehensive class-to-class dependency relat
 
 ### Should Have
 
-- [ ] Track annotation usage and create USES relationships
-- [ ] Handle generic type parameters (`List<ClassName>`)
+- [ ] **Track annotation usage and create USES relationships** ⭐ _Phase 2 Priority_
+  - [ ] Parse class-level annotations (`@Service`, `@Component`, `@Controller`)
+  - [ ] Parse method-level annotations (`@Test`, `@Override`, `@RequestMapping`)
+  - [ ] Parse field-level annotations (`@Autowired`, `@Value`, `@Qualifier`)
+  - [ ] Parse parameter-level annotations (`@RequestParam`, `@PathVariable`)
+- [ ] **Handle generic type parameters (`List<ClassName>`)** ⭐ _Phase 2 Priority_
+  - [ ] Extract type arguments from generic declarations
+  - [ ] Create USES relationships for all type parameters
+  - [ ] Handle nested generics (`Map<String, List<Entity>>`)
+  - [ ] Support wildcard generics (`List<? extends Entity>`)
 - [ ] Detect lambda expressions and method references
 - [ ] Support inner class and nested class dependencies
 - [ ] Capture exception handling dependencies (`catch (ExceptionClass e)`)
@@ -76,7 +130,7 @@ Enhance the Java parser to capture comprehensive class-to-class dependency relat
 
 ### Parser Enhancements
 
-**Import Statement Processing:**
+**Import Statement Processing:** ✅ COMPLETED
 
 ```java
 // Add visitor method for import declarations
@@ -86,6 +140,79 @@ public void visit(ImportDeclaration importDecl, Void arg) {
     ClassNode importedClass = getOrCreateClassNode(importedClassName);
     graphService.createRelationship(currentClass.getId(), importedClass.getId(), "USES",
         Map.of("type", "import", "fullyQualifiedName", importDecl.getNameAsString()));
+}
+```
+
+**Annotation Usage Processing:** 🔄 NEW IMPLEMENTATION
+
+```java
+// Add annotation visitor methods to JavaGraphVisitor
+@Override
+public void visit(MarkerAnnotationExpr annotation, Void arg) {
+    String annotationName = annotation.getNameAsString();
+    AnnotationNode annotationNode = createAnnotationNode(annotationName, Map.of());
+    createAnnotationUsesRelationship(getCurrentContext(), annotationNode, "marker");
+}
+
+@Override
+public void visit(SingleMemberAnnotationExpr annotation, Void arg) {
+    String annotationName = annotation.getNameAsString();
+    Map<String, String> attributes = Map.of("value", annotation.getMemberValue().toString());
+    AnnotationNode annotationNode = createAnnotationNode(annotationName, attributes);
+    createAnnotationUsesRelationship(getCurrentContext(), annotationNode, "single_member");
+}
+
+@Override
+public void visit(NormalAnnotationExpr annotation, Void arg) {
+    String annotationName = annotation.getNameAsString();
+    Map<String, String> attributes = extractAnnotationAttributes(annotation);
+    AnnotationNode annotationNode = createAnnotationNode(annotationName, attributes);
+    createAnnotationUsesRelationship(getCurrentContext(), annotationNode, "normal");
+}
+```
+
+**Generic Type Parameter Processing:** 🔄 NEW IMPLEMENTATION
+
+```java
+// Enhanced TypeResolver methods
+public List<String> extractGenericTypeParameters(String typeDeclaration) {
+    List<String> typeParams = new ArrayList<>();
+    Pattern pattern = Pattern.compile("<([^<>]+)>");
+    Matcher matcher = pattern.matcher(typeDeclaration);
+
+    if (matcher.find()) {
+        String genericsContent = matcher.group(1);
+        // Handle nested generics and split by commas
+        typeParams.addAll(parseNestedGenerics(genericsContent));
+    }
+
+    return typeParams;
+}
+
+// Updated dependency detection with generic support
+public void detectFieldTypeDependencies(VariableDeclarator variable,
+                                      FieldDeclaration fieldDecl,
+                                      ClassNode currentClass,
+                                      Map<String, String> importedClasses) {
+    String fieldTypeName = fieldDecl.getElementType().toString();
+    String baseType = typeResolver.extractSimpleTypeName(fieldTypeName);
+
+    // Create USES relationship for base type
+    if (!typeResolver.isPrimitiveType(baseType)) {
+        ClassNode baseTypeClass = getOrCreateClassNode(baseType, importedClasses);
+        relationshipManager.createFieldTypeUsesRelationship(currentClass, baseTypeClass,
+            variable.getNameAsString(), fieldTypeName);
+    }
+
+    // Create USES relationships for generic type parameters
+    List<String> genericParams = typeResolver.extractGenericTypeParameters(fieldTypeName);
+    for (String genericParam : genericParams) {
+        if (!typeResolver.isPrimitiveType(genericParam)) {
+            ClassNode genericTypeClass = getOrCreateClassNode(genericParam, importedClasses);
+            relationshipManager.createGenericTypeUsesRelationship(currentClass, genericTypeClass,
+                variable.getNameAsString(), fieldTypeName, genericParam);
+        }
+    }
 }
 ```
 
@@ -120,14 +247,82 @@ methodDecl.findAll(MethodCallExpr.class).forEach(methodCall -> {
 **Enhanced USES Relationship Properties:**
 
 ```cypher
-// USES relationship with rich metadata
+// USES relationship with rich metadata (CURRENT)
 (:Class)-[:USES {
-  type: "import|instantiation|static_call|field_type|parameter_type|return_type|annotation",
-  context: "method_name|field_name|class_level",
+  type: "import|instantiation|static_call|field_type|parameter_type|return_type|annotation|generic_param",
+  context: "method_name|field_name|class_level|annotation_target",
   fullyQualifiedName: "com.example.package.ClassName",
   isExternal: true/false,
   count: 5  // frequency of usage
 }]->(:Class)
+```
+
+**NEW: Annotation Node Model**
+
+```java
+@Node("Annotation")
+public class AnnotationNode {
+    @Id
+    private String id;
+
+    @Property("name")
+    private String name;                    // Simple name (e.g., "Service")
+
+    @Property("fullyQualifiedName")
+    private String fullyQualifiedName;      // Complete name (e.g., "org.springframework.stereotype.Service")
+
+    @Property("attributes")
+    private Map<String, String> attributes;  // Annotation parameters
+
+    @Property("targetType")
+    private String targetType;              // "class|method|field|parameter"
+
+    @Property("isFramework")
+    private boolean isFramework;            // true for Spring, JUnit, etc.
+
+    @Property("frameworkType")
+    private String frameworkType;           // "spring|junit|validation|etc."
+}
+```
+
+**NEW: Enhanced USES Relationships for Annotations**
+
+```cypher
+// Class uses annotation
+(:Class)-[:USES {
+  type: "annotation",
+  targetType: "class",
+  annotationAttributes: "{value: 'userService', scope: 'singleton'}",
+  frameworkType: "spring"
+}]->(:Annotation {name: "Service"})
+
+// Method uses annotation
+(:Method)-[:USES {
+  type: "annotation",
+  targetType: "method",
+  annotationAttributes: "{path: '/users', method: 'GET'}",
+  frameworkType: "spring"
+}]->(:Annotation {name: "GetMapping"})
+```
+
+**NEW: Enhanced USES Relationships for Generic Types**
+
+```cypher
+// Field type with generics: List<String> field
+(:Class)-[:USES {
+  type: "field_type",
+  context: "field: users",
+  genericContainer: "List",
+  typeArguments: ["String"],
+  genericDepth: 1
+}]->(:Class {name: "List"})
+
+(:Class)-[:USES {
+  type: "generic_param",
+  context: "field: users",
+  containerType: "List",
+  parameterIndex: 0
+}]->(:Class {name: "String"})
 ```
 
 **Class Node Enhancements:**
@@ -150,13 +345,35 @@ private Set<String> importedBy = new HashSet<>();  // Classes that import this
 - [x] Add relationship metadata (type, context)
 - [x] Handle class name resolution (imports vs fully qualified names)
 
-#### Phase 2: Advanced Dependency Detection (1 week) ✅ COMPLETED
+#### Phase 2: Advanced Dependency Detection (1 week) 🔄 IN PROGRESS
 
 - [x] Static method call detection
 - [x] Field type dependency extraction
 - [x] Method parameter and return type analysis
-- [ ] Annotation usage tracking
-- [ ] Generic type parameter handling
+- [ ] **Annotation usage tracking** ⭐ _Current Priority_
+- [ ] **Generic type parameter handling** ⭐ _Current Priority_
+
+##### Phase 2a: Annotation Usage Tracking (3 days)
+
+- [ ] Add annotation visitor methods to `JavaGraphVisitor`
+- [ ] Create `AnnotationNode` model class
+- [ ] Implement annotation dependency analysis in `DependencyAnalyzer`
+- [ ] Add annotation relationship creation in `RelationshipManager`
+- [ ] Create comprehensive annotation tests
+
+##### Phase 2b: Generic Type Parameter Handling (3 days)
+
+- [ ] Enhance `TypeResolver` with generic type extraction
+- [ ] Update all dependency detection methods for generic support
+- [ ] Add generic type metadata to USES relationships
+- [ ] Create tests for nested and complex generics
+
+##### Phase 2c: Framework Pattern Integration (2 days)
+
+- [ ] Create `FrameworkPatternDetector` service
+- [ ] Implement Spring annotation detection patterns
+- [ ] Add JUnit annotation detection patterns
+- [ ] Integrate framework detection into main parsing flow
 
 #### Phase 3: External Dependency Management (3 days) ✅ COMPLETED
 
@@ -169,7 +386,7 @@ private Set<String> importedBy = new HashSet<>();  // Classes that import this
 
 ### New Cypher Query Capabilities
 
-**Class Dependency Analysis:**
+**Current Class Dependency Analysis:**
 
 ```cypher
 // Find all classes that depend on a specific class
@@ -185,6 +402,48 @@ ORDER BY u.count DESC
 MATCH (c1:Class)-[:USES*]->(c2:Class)-[:USES*]->(c1)
 WHERE c1 <> c2
 RETURN c1.name, c2.name
+```
+
+**NEW: Annotation Usage Analysis**
+
+```cypher
+// Find all Spring services in the codebase
+MATCH (c:Class)-[:USES]->(a:Annotation {name: "Service"})
+RETURN c.name, c.packageName, a.attributes
+
+// Find classes using dependency injection
+MATCH (c:Class)-[:USES]->(a:Annotation {name: "Autowired"})
+RETURN c.name, count(*) as autowired_dependencies
+
+// Find test classes and their test methods
+MATCH (c:Class)-[:CONTAINS]->(m:Method)-[:USES]->(a:Annotation {name: "Test"})
+RETURN c.name, collect(m.name) as test_methods
+
+// Analyze framework usage patterns
+MATCH (c:Class)-[:USES]->(a:Annotation)
+WHERE a.frameworkType = "spring"
+RETURN a.name, count(c) as usage_count
+ORDER BY usage_count DESC
+```
+
+**NEW: Generic Type Dependency Analysis**
+
+```cypher
+// Find all generic type usage patterns
+MATCH (c:Class)-[u:USES]->(t:Class)
+WHERE u.type = "generic_param"
+RETURN c.name, u.containerType, t.name, u.parameterIndex
+
+// Analyze generic collection usage
+MATCH (c:Class)-[u:USES]->(container:Class)
+WHERE u.genericContainer IS NOT NULL
+RETURN container.name, u.typeArguments, count(c) as usage_count
+ORDER BY usage_count DESC
+
+// Find complex nested generic patterns
+MATCH (c:Class)-[u:USES]->(t:Class)
+WHERE u.genericDepth > 1
+RETURN c.name, u.context, u.typeArguments, u.genericDepth
 ```
 
 **Package Coupling Metrics:**
@@ -203,7 +462,7 @@ RETURN count(DISTINCT external.packageName) as afferentCoupling
 
 ### REST API Extensions
 
-**New Dependency Analysis Endpoints:**
+**Current Dependency Analysis Endpoints:**
 
 ```java
 GET /api/v1/analysis/dependencies/{className}
@@ -213,15 +472,103 @@ GET /api/v1/analysis/unused-dependencies
 GET /api/v1/analysis/dependency-graph/{scope}
 ```
 
+**NEW: Annotation Analysis Endpoints**
+
+```java
+GET /api/v1/analysis/annotations/{annotationName}
+GET /api/v1/analysis/framework-usage/{frameworkType}
+GET /api/v1/analysis/spring-patterns
+GET /api/v1/analysis/test-coverage/annotations
+GET /api/v1/analysis/dependency-injection
+```
+
+**NEW: Generic Type Analysis Endpoints**
+
+```java
+GET /api/v1/analysis/generics/{containerType}
+GET /api/v1/analysis/type-parameters/{className}
+GET /api/v1/analysis/collection-usage
+GET /api/v1/analysis/generic-complexity
+```
+
+**Example Responses:**
+
+```json
+// GET /api/v1/analysis/spring-patterns
+{
+  "frameworkType": "spring",
+  "patterns": [
+    {
+      "annotationName": "Service",
+      "usageCount": 15,
+      "classes": ["UserService", "ProductService", "OrderService"]
+    },
+    {
+      "annotationName": "Autowired",
+      "usageCount": 45,
+      "injectionPoints": ["constructor", "field", "setter"]
+    }
+  ]
+}
+
+// GET /api/v1/analysis/generics/List
+{
+  "containerType": "List",
+  "typeParameterUsage": [
+    {
+      "typeArgument": "String",
+      "usageCount": 12,
+      "contexts": ["field", "parameter", "return_type"]
+    },
+    {
+      "typeArgument": "Entity",
+      "usageCount": 8,
+      "contexts": ["field", "parameter"]
+    }
+  ]
+}
+```
+
 ## Testing Strategy
 
 ### Unit Tests
+
+**Completed Tests:**
 
 - [x] Test import statement parsing with various import patterns
 - [x] Verify object instantiation detection in different contexts
 - [x] Test static method call identification
 - [x] Validate class name resolution logic
 - [x] Test external vs internal class classification
+
+**Phase 2 Testing Plan:**
+
+**Annotation Testing:**
+
+- [ ] Test marker annotation parsing (`@Override`, `@Test`)
+- [ ] Test single member annotation parsing (`@Value("${config.property}")`)
+- [ ] Test complex annotation parsing (`@RequestMapping(path="/api", method=RequestMethod.GET)`)
+- [ ] Test framework annotation detection (Spring, JUnit)
+- [ ] Test annotation inheritance and meta-annotations
+- [ ] Validate annotation node creation with correct metadata
+- [ ] Test annotation USES relationship creation
+
+**Generic Type Testing:**
+
+- [ ] Test simple generic extraction (`List<String>`)
+- [ ] Test nested generic extraction (`Map<String, List<Entity>>`)
+- [ ] Test wildcard generic handling (`List<? extends Entity>`)
+- [ ] Test bounded type parameters (`<T extends Comparable<T>>`)
+- [ ] Test generic method parameters and return types
+- [ ] Validate generic type USES relationship creation
+- [ ] Test generic type metadata in relationships
+
+**Framework Pattern Testing:**
+
+- [ ] Test Spring annotation pattern detection
+- [ ] Test JUnit test pattern detection
+- [ ] Test validation annotation patterns
+- [ ] Test dependency injection pattern recognition
 
 ### Integration Tests
 
@@ -297,7 +644,7 @@ RETURN type(r), related.name
 // "IMPLEMENTS" -> "UserOperations"
 ```
 
-### After Enhancement
+### After Enhancement (Current State)
 
 ```cypher
 // Enhanced state - comprehensive dependencies
@@ -310,6 +657,39 @@ RETURN type(r), r.type, related.name
 // "USES" -> "instantiation" -> "EmailService"
 // "USES" -> "static_call" -> "ValidationUtils"
 // "USES" -> "field_type" -> "Logger"
+```
+
+### After Phase 2 Completion (Target State)
+
+```cypher
+// Complete dependency analysis including annotations and generics
+MATCH (c:Class {name: "UserService"})-[r]->(related)
+RETURN type(r), r.type, r.context, related.name, labels(related)
+// Results:
+// "EXTENDS" -> null -> null -> "BaseService" -> ["Class"]
+// "IMPLEMENTS" -> null -> null -> "UserOperations" -> ["Class"]
+// "USES" -> "import" -> null -> "UserRepository" -> ["Class"]
+// "USES" -> "annotation" -> "class" -> "Service" -> ["Annotation"]
+// "USES" -> "annotation" -> "field: userRepo" -> "Autowired" -> ["Annotation"]
+// "USES" -> "field_type" -> "field: users" -> "List" -> ["Class"]
+// "USES" -> "generic_param" -> "field: users" -> "User" -> ["Class"]
+// "USES" -> "instantiation" -> "method: processUser" -> "EmailService" -> ["Class"]
+// "USES" -> "static_call" -> "method: validateUser" -> "ValidationUtils" -> ["Class"]
+
+// NEW: Query annotation usage patterns
+MATCH (c:Class {name: "UserService"})-[:USES]->(a:Annotation)
+RETURN a.name, a.frameworkType, a.attributes
+// Results:
+// "Service" -> "spring" -> {value: "userService"}
+// "Transactional" -> "spring" -> {readOnly: "false"}
+
+// NEW: Query generic type patterns
+MATCH (c:Class {name: "UserService"})-[u:USES {type: "generic_param"}]->(t:Class)
+RETURN u.containerType, t.name, u.parameterIndex
+// Results:
+// "List" -> "User" -> 0
+// "Map" -> "String" -> 0
+// "Map" -> "Permission" -> 1
 ```
 
 ## Dependencies

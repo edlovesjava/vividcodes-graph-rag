@@ -1,5 +1,6 @@
 package com.vividcodes.graphrag.service;
 
+import com.vividcodes.graphrag.model.graph.AnnotationNode;
 import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
 import com.vividcodes.graphrag.model.graph.MethodNode;
@@ -16,6 +17,8 @@ public interface GraphService {
     void saveMethod(MethodNode methodNode);
     
     void saveField(FieldNode fieldNode);
+    
+    void saveAnnotation(AnnotationNode annotationNode);
     
     void saveRepository(RepositoryNode repositoryNode);
     

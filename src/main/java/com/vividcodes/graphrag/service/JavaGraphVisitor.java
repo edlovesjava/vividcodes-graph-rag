@@ -14,7 +14,10 @@ import com.github.javaparser.ast.PackageDeclaration;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
 import com.github.javaparser.ast.body.FieldDeclaration;
 import com.github.javaparser.ast.body.MethodDeclaration;
+import com.github.javaparser.ast.expr.MarkerAnnotationExpr;
+import com.github.javaparser.ast.expr.NormalAnnotationExpr;
 import com.github.javaparser.ast.expr.ObjectCreationExpr;
+import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
 import com.github.javaparser.ast.visitor.VoidVisitorAdapter;
 import com.vividcodes.graphrag.config.ParserConfig;
 import com.vividcodes.graphrag.model.dto.RepositoryMetadata;
@@ -146,17 +149,22 @@ public class JavaGraphVisitor extends VoidVisitorAdapter<Void> {
             currentMethods.clear();
             currentFields.clear();
             
-            // Visit methods and fields
-            super.visit(classDecl, arg);
+                    // Visit methods and fields
+        super.visit(classDecl, arg);
+        
+        // After visiting all children, create relationships
+        if (currentClass != null) {
+            // Process class-level annotations
+            classDecl.getAnnotations().forEach(annotation -> {
+                dependencyAnalyzer.processAnnotation(annotation, currentClass, "class", importedClasses);
+            });
             
-            // After visiting all children, create relationships
-            if (currentClass != null) {
-                // Create CONTAINS relationships for this class
-                relationshipManager.createContainsRelationships(
-                    currentClass, currentPackage, containingSubProject, currentMethods, currentFields);
-                
-                // Create USES relationships for imported classes
-                dependencyAnalyzer.createImportUsesRelationships(currentClass, importedClasses);
+            // Create CONTAINS relationships for this class
+            relationshipManager.createContainsRelationships(
+                currentClass, currentPackage, containingSubProject, currentMethods, currentFields);
+            
+            // Create USES relationships for imported classes
+            dependencyAnalyzer.createImportUsesRelationships(currentClass, importedClasses);
                 
                 // Create EXTENDS relationship if this class extends another
                 if (classDecl.getExtendedTypes().isNonEmpty()) {
@@ -193,6 +201,18 @@ public class JavaGraphVisitor extends VoidVisitorAdapter<Void> {
             currentMethods.add(methodNode);
             createdNodes.add(methodNode);
             
+            // Process method-level annotations
+            methodDecl.getAnnotations().forEach(annotation -> {
+                dependencyAnalyzer.processAnnotation(annotation, methodNode, "method", importedClasses);
+            });
+            
+            // Process parameter-level annotations
+            methodDecl.getParameters().forEach(parameter -> {
+                parameter.getAnnotations().forEach(annotation -> {
+                    dependencyAnalyzer.processParameterAnnotation(annotation, currentClass, parameter, importedClasses);
+                });
+            });
+            
             // Detect method calls within this method
             dependencyAnalyzer.detectStaticMethodCalls(methodDecl, methodNode, currentClass, importedClasses);
             
@@ -218,6 +238,11 @@ public class JavaGraphVisitor extends VoidVisitorAdapter<Void> {
                 graphService.saveField(fieldNode);
                 currentFields.add(fieldNode);
                 createdNodes.add(fieldNode);
+                
+                // Process field-level annotations
+                fieldDecl.getAnnotations().forEach(annotation -> {
+                    dependencyAnalyzer.processAnnotation(annotation, fieldNode, "field", importedClasses);
+                });
                 
                 // Detect object instantiation in field initializers
                 if (variable.getInitializer().isPresent()) {
@@ -313,5 +338,49 @@ public class JavaGraphVisitor extends VoidVisitorAdapter<Void> {
      */
     public List<FieldNode> getCurrentFields() {
         return new ArrayList<>(currentFields);
+    }
+
+    /**
+     * Process marker annotations (e.g., @Override, @Test).
+     * 
+     * @param annotation The marker annotation expression
+     * @param arg Visitor argument (unused)
+     */
+    @Override
+    public void visit(final MarkerAnnotationExpr annotation, final Void arg) {
+        LOGGER.debug("Visiting marker annotation: {}", annotation.getNameAsString());
+        // Note: Annotation processing is handled in the parent element visitors
+        // (class, method, field) to maintain proper context
+        super.visit(annotation, arg);
+    }
+
+    /**
+     * Process single member annotations (e.g., @Value("config.property")).
+     * 
+     * @param annotation The single member annotation expression
+     * @param arg Visitor argument (unused)
+     */
+    @Override
+    public void visit(final SingleMemberAnnotationExpr annotation, final Void arg) {
+        LOGGER.debug("Visiting single member annotation: {} with value: {}", 
+                   annotation.getNameAsString(), annotation.getMemberValue());
+        // Note: Annotation processing is handled in the parent element visitors
+        // (class, method, field) to maintain proper context
+        super.visit(annotation, arg);
+    }
+
+    /**
+     * Process normal annotations with multiple attributes (e.g., @RequestMapping(path="/api", method=GET)).
+     * 
+     * @param annotation The normal annotation expression
+     * @param arg Visitor argument (unused)
+     */
+    @Override
+    public void visit(final NormalAnnotationExpr annotation, final Void arg) {
+        LOGGER.debug("Visiting normal annotation: {} with {} attributes", 
+                   annotation.getNameAsString(), annotation.getPairs().size());
+        // Note: Annotation processing is handled in the parent element visitors
+        // (class, method, field) to maintain proper context
+        super.visit(annotation, arg);
     }
 }

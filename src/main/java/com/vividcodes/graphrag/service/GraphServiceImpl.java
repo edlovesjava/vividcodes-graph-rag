@@ -14,6 +14,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import com.vividcodes.graphrag.model.graph.AnnotationNode;
 import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
 import com.vividcodes.graphrag.model.graph.MethodNode;
@@ -202,6 +203,40 @@ public class GraphServiceImpl implements GraphService {
         } catch (Exception e) {
             LOGGER.error("Error saving field: {}", fieldNode.getName(), e);
             throw new RuntimeException("Failed to save field", e);
+        }
+    }
+    
+    @Override
+    public void saveAnnotation(final AnnotationNode annotationNode) {
+        try (Session session = neo4jDriver.session()) {
+            String cypher = """
+                MERGE (a:Annotation {id: $id})
+                SET a.name = $name,
+                    a.fullyQualifiedName = $fullyQualifiedName,
+                    a.attributes = $attributes,
+                    a.targetType = $targetType,
+                    a.isFramework = $isFramework,
+                    a.frameworkType = $frameworkType,
+                    a.created_at = $createdAt,
+                    a.updated_at = $updatedAt
+                """;
+            
+            session.run(cypher, Values.parameters(
+                "id", annotationNode.getId(),
+                "name", annotationNode.getName(),
+                "fullyQualifiedName", annotationNode.getFullyQualifiedName(),
+                "attributes", annotationNode.getAttributesAsJson(),
+                "targetType", annotationNode.getTargetType(),
+                "isFramework", annotationNode.getIsFramework(),
+                "frameworkType", annotationNode.getFrameworkType(),
+                "createdAt", annotationNode.getCreatedAt(),
+                "updatedAt", annotationNode.getUpdatedAt()
+            ));
+            
+            LOGGER.debug("Saved annotation: {} with ID: {}", annotationNode.getName(), annotationNode.getId());
+        } catch (Exception e) {
+            LOGGER.error("Error saving annotation: {}", annotationNode.getName(), e);
+            throw new RuntimeException("Failed to save annotation", e);
         }
     }
     

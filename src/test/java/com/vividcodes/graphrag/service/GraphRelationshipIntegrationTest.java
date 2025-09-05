@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
-
 import org.neo4j.driver.AuthTokens;
 import org.neo4j.driver.Driver;
 import org.neo4j.driver.GraphDatabase;
@@ -22,10 +21,13 @@ import org.neo4j.driver.Session;
 import org.neo4j.driver.Values;
 import org.springframework.test.util.ReflectionTestUtils;
 import com.vividcodes.graphrag.config.ParserConfig;
+import com.vividcodes.graphrag.model.graph.AnnotationNode;
 import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
 import com.vividcodes.graphrag.model.graph.MethodNode;
 import com.vividcodes.graphrag.model.graph.PackageNode;
+import com.vividcodes.graphrag.model.graph.RepositoryNode;
+import com.vividcodes.graphrag.model.graph.SubProjectNode;
 
 /**
  * Integration test to verify that all relationship types specified in the graph schema design
@@ -734,6 +736,11 @@ class GraphRelationshipIntegrationTest {
         }
 
         @Override
+        public org.springframework.beans.factory.config.AutowireCapableBeanFactory getAutowireCapableBeanFactory() throws IllegalStateException {
+            return null;
+        }
+
+        @Override
         public org.springframework.core.io.Resource getResource(String location) {
             return null;
         }
@@ -764,6 +771,83 @@ class GraphRelationshipIntegrationTest {
         @Override
         public String getMessage(org.springframework.context.MessageSourceResolvable resolvable, java.util.Locale locale) throws org.springframework.context.NoSuchMessageException {
             return resolvable.getDefaultMessage();
+        }
+        
+        /**
+         * Simple mock implementation of GraphService for testing.
+         * This avoids the Mockito ByteBuddy issues with Java 17.
+         */
+        private static class SimpleMockGraphService implements GraphService {
+            
+            @Override
+            public void savePackage(PackageNode packageNode) {
+                // Mock implementation - do nothing
+            }
+            
+            @Override
+            public void saveClass(ClassNode classNode) {
+                // Mock implementation - do nothing
+            }
+            
+            @Override
+            public void saveMethod(MethodNode methodNode) {
+                // Mock implementation - do nothing
+            }
+            
+            @Override
+            public void saveField(FieldNode fieldNode) {
+                // Mock implementation - do nothing
+            }
+            
+            @Override
+            public void saveAnnotation(AnnotationNode annotationNode) {
+                // Mock implementation - do nothing
+            }
+            
+            @Override
+            public void saveRepository(RepositoryNode repositoryNode) {
+                // Mock implementation - do nothing
+            }
+            
+            @Override
+            public void saveSubProject(SubProjectNode subProjectNode) {
+                // Mock implementation - do nothing
+            }
+            
+            @Override
+            public void createRelationship(String fromId, String toId, String relationshipType) {
+                // Mock implementation - do nothing
+            }
+            
+            @Override
+            public void createRelationship(String fromId, String toId, String relationshipType, java.util.Map<String, Object> properties) {
+                // Mock implementation - do nothing
+            }
+            
+            @Override
+            public void clearAllData() {
+                // Mock implementation - do nothing
+            }
+            
+            @Override
+            public java.util.Map<String, Object> getDataStatistics() {
+                return new java.util.HashMap<>();
+            }
+            
+            @Override
+            public SubProjectNode findSubProjectById(String id) {
+                return null;
+            }
+            
+            @Override
+            public java.util.List<SubProjectNode> findSubProjectsByRepositoryId(String repositoryId) {
+                return new java.util.ArrayList<>();
+            }
+            
+            @Override
+            public void deleteSubProject(String id) {
+                // Mock implementation - do nothing
+            }
         }
         
         /**
