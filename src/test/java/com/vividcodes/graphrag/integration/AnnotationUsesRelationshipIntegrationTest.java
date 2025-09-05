@@ -176,7 +176,7 @@ public class AnnotationUsesRelationshipIntegrationTest {
         // Query for JUnit annotation nodes
         String junitQuery = """
             MATCH (a:Annotation) 
-            WHERE a.frameworkType = 'junit' OR a.name IN ['Test', 'BeforeEach', 'AfterEach', 'DisplayName']
+            WHERE a.frameworkType = 'JUnit' OR a.name IN ['Test', 'BeforeEach', 'AfterEach', 'DisplayName']
             RETURN a.name as name, a.frameworkType as framework, a.targetType as target
             """;
         
@@ -257,11 +257,12 @@ public class AnnotationUsesRelationshipIntegrationTest {
         assertTrue(complexResults.getResults().size() >= 3,
                   "Expected complex annotations with attributes, found: " + complexResults.getResults().size());
         
-        // Query for parameter-level annotation relationships
+        // Query for parameter-level annotation relationships  
+        // Parameter annotations are stored as method-level relationships since they're attached to the method
         String paramAnnotationQuery = """
-            MATCH (c:Class)-[r:USES {type: 'annotation'}]->(a:Annotation)
-            WHERE r.context = 'parameter'
-            RETURN c.name as className, r.context as context, a.name as annotationName
+            MATCH (m:Method)-[r:USES {type: 'annotation'}]->(a:Annotation)
+            WHERE a.name IN ['PathVariable', 'RequestParam'] AND a.targetType = 'parameter'
+            RETURN m.name as methodName, r.context as context, a.name as annotationName
             """;
         
         QueryResult paramResults = cypherQueryService.executeQuery(paramAnnotationQuery, java.util.Map.of(), new CypherQueryRequest.QueryOptions());

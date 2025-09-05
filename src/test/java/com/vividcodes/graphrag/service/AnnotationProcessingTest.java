@@ -135,7 +135,7 @@ class AnnotationProcessingTest {
         assertEquals("org.springframework.stereotype.Service", savedAnnotation.getFullyQualifiedName());
         assertEquals("class", savedAnnotation.getTargetType());
         assertTrue(savedAnnotation.getIsFramework());
-        assertEquals("spring", savedAnnotation.getFrameworkType());
+        assertEquals("Spring", savedAnnotation.getFrameworkType());
     }
 
     @Test
@@ -171,7 +171,7 @@ class AnnotationProcessingTest {
         assertEquals("org.junit.jupiter.api.Test", savedAnnotation.getFullyQualifiedName());
         assertEquals("method", savedAnnotation.getTargetType());
         assertTrue(savedAnnotation.getIsFramework());
-        assertEquals("junit", savedAnnotation.getFrameworkType());
+        assertEquals("JUnit", savedAnnotation.getFrameworkType());
     }
 
     private CompilationUnit parseCode(String sourceCode) {

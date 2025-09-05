@@ -91,18 +91,18 @@ public class AnnotationNode {
         }
         
         if (fullyQualifiedName.startsWith("org.springframework.")) {
-            return "spring";
+            return "Spring";
         } else if (fullyQualifiedName.startsWith("org.junit.") || 
                    fullyQualifiedName.startsWith("junit.")) {
-            return "junit";
+            return "JUnit";
         } else if (fullyQualifiedName.startsWith("javax.validation.") ||
                    fullyQualifiedName.startsWith("jakarta.validation.")) {
-            return "validation";
+            return "Validation";
         } else if (fullyQualifiedName.startsWith("com.fasterxml.jackson.")) {
-            return "jackson";
+            return "Jackson";
         } else if (fullyQualifiedName.startsWith("javax.persistence.") ||
                    fullyQualifiedName.startsWith("jakarta.persistence.")) {
-            return "jpa";
+            return "JPA";
         }
         
         return null;

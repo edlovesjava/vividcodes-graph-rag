@@ -574,6 +574,11 @@ class GraphRelationshipIntegrationTest {
         public <T> org.springframework.beans.factory.ObjectProvider<T> getBeanProvider(Class<T> requiredType, boolean allowEagerInit) {
             return null;
         }
+        
+        @Override
+        public boolean containsBeanDefinition(String beanName) {
+            return false;
+        }
 
         @Override
         public <T> org.springframework.beans.factory.ObjectProvider<T> getBeanProvider(org.springframework.core.ResolvableType requiredType) {
@@ -720,22 +725,18 @@ class GraphRelationshipIntegrationTest {
             return System.currentTimeMillis();
         }
 
-        @Override
         public org.springframework.context.ApplicationContext getParent() {
             return null;
         }
 
-        @Override
         public org.springframework.context.ApplicationEventPublisher getApplicationEventPublisher() {
             return null;
         }
 
-        @Override
         public org.springframework.core.env.Environment getEnvironment() {
             return null;
         }
 
-        @Override
         public org.springframework.core.io.support.ResourcePatternResolver getResourcePatternResolver() {
             return null;
         }
