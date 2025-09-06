@@ -24,10 +24,25 @@ Java Source Code → Parser → Graph Nodes/Edges → Neo4j → Query Engine →
 
 ## Prerequisites
 
-- Java 17+
-- Maven 3.8+
-- Docker and Docker Compose
-- Neo4j (will be started via Docker)
+### Required Versions
+
+- **Java**: 17+ ⚠️ _Spring Boot 3.x requires Java 17 minimum_
+- **Maven**: 3.8+
+- **Docker**: Latest version with Docker Compose V2
+- **Neo4j**: 5.x (automatically started via Docker)
+
+### Validation Commands
+
+```bash
+# Verify Java version
+java -version  # Should show 17+
+
+# Verify Maven version
+mvn -version   # Should show 3.8+
+
+# Verify Docker is running
+docker --version && docker compose version
+```
 
 ## Quick Start
 
@@ -41,10 +56,26 @@ cd vividcodes-graph-rag
 
 ### Manual Setup
 
+#### Pre-Flight Check
+
+Before starting, run these validation steps:
+
+```bash
+# 1. Verify prerequisites
+java -version   # Must be 17+
+docker ps       # Docker should be running
+
+# 2. Start dependencies
+docker compose up neo4j -d
+
+# 3. Wait for Neo4j (30-60 seconds)
+curl -f http://localhost:7474 || echo "Neo4j still starting..."
+```
+
 #### 1. Start Neo4j Database
 
 ```bash
-docker-compose up neo4j -d
+docker compose up neo4j -d
 ```
 
 Wait for Neo4j to be ready (check http://localhost:7474)
@@ -160,6 +191,27 @@ Clear all data and immediately ingest new data from a specified path.
 
 ## Configuration
 
+### Configuration Notes
+
+#### Spring Boot 3.x Compatibility
+
+This project uses **Spring Boot 3.2.0**, which requires:
+
+- Java 17+ (not Java 8 or 11)
+- Updated profile syntax in YAML files
+- Neo4j 5.x compatibility
+
+#### Profile Configuration
+
+Development profile is pre-configured in `application-dev.yml`:
+
+```yaml
+spring:
+  config:
+    activate:
+      on-profile: dev # Spring Boot 3.x syntax
+```
+
 ### Application Properties
 
 ```yaml
@@ -180,6 +232,68 @@ graph:
   indexes:
     enabled: true
 ```
+
+## Troubleshooting
+
+### Common Startup Issues
+
+#### Application Fails with `InvalidConfigDataPropertyException`
+
+**Error**: `Property 'spring.profiles' imported from location 'class path resource [application-dev.yml]' is invalid`
+
+**Solution**: This occurs with Spring Boot 3.x when using deprecated profile syntax.
+
+- ✅ **Correct**: `spring.config.activate.on-profile: dev`
+- ❌ **Deprecated**: `spring.profiles: dev`
+
+#### Neo4j Connection Issues
+
+**Error**: `Neo4j connection failed`
+
+**Solution**:
+
+1. Ensure Docker is running: `docker ps`
+2. Start Neo4j: `docker compose up neo4j -d`
+3. Wait for startup: Check http://localhost:7474
+4. Verify Neo4j credentials in `application.yml`
+
+#### Port Already in Use
+
+**Error**: `Port 8080 was already in use`
+
+**Solution**:
+
+```bash
+# Kill existing process
+pkill -f "graph-rag" || pkill -f "spring-boot"
+# Or use different port
+mvn spring-boot:run -Dserver.port=8081
+```
+
+#### Java Version Compatibility
+
+**Error**: `UnsupportedClassVersionError` or similar Java version errors
+
+**Solution**:
+
+- Ensure Java 17+ is installed and active
+- Check: `java -version` and `echo $JAVA_HOME`
+- Spring Boot 3.x requires Java 17 minimum
+
+#### Docker Compose Issues
+
+**Error**: `docker-compose: command not found`
+
+**Solution**:
+
+- Use newer syntax: `docker compose` (with space)
+- Or install legacy docker-compose: `pip install docker-compose`
+
+#### Full-Text Search Warnings
+
+**Warning**: `There is no procedure with the name 'db.index.fulltext.createNodeIndex' registered`
+
+**Solution**: This is a non-critical warning. Full-text search indexes are optional and the application works without them.
 
 ## Development
 
