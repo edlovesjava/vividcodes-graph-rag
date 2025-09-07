@@ -6,7 +6,7 @@
 - **Story Name**: XML Configuration Parsing
 - **Epic**: Graph Query Engine
 - **Priority**: HIGH
-- **Estimated Duration**: 2-3 weeks  
+- **Estimated Duration**: 2-3 weeks
 - **Dependencies**: STORY_007_UPSERT_PATTERN_IMPORT (Recommended - enables iterative XML parsing development)
 - **Status**: NOT_STARTED
 
@@ -166,7 +166,7 @@ CREATE ()-[:BEAN_DEFINITION]->() // XML defines bean with dependencies
 ### Internal Dependencies
 
 - STORY_007_UPSERT_PATTERN_IMPORT: Recommended for iterative development and testing
-- Existing `GraphServiceImpl` for creating relationships  
+- Existing `GraphServiceImpl` for creating relationships
 - `RepositoryService` for file discovery and metadata
 
 ## Deliverables
