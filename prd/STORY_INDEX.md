@@ -114,6 +114,13 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 - **Status**: NOT_STARTED
 - **Description**: Fix critical security and code quality issues identified by SpotBugs analysis (28 violations)
 
+#### [STORY_016_XML_CONFIGURATION_PARSING](./STORY_016_XML_CONFIGURATION_PARSING.md)
+
+- **File**: [`STORY_016_XML_CONFIGURATION_PARSING.md`](./STORY_016_XML_CONFIGURATION_PARSING.md)
+- **Epic**: Graph Query Engine
+- **Status**: NOT_STARTED
+- **Description**: Parse XML configuration files (Spring Context, iBATIS/MyBatis DAO) to capture dependency injection relationships missing from Java code analysis
+
 ## Epic Mapping
 
 ### Repository Tracking Feature
@@ -125,6 +132,7 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 
 - [STORY_002_CYPHER_QUERY_ENDPOINT](./STORY_002_CYPHER_QUERY_ENDPOINT.md) ✅
 - [STORY_008_GRAPH_QUERY_ENGINE](./STORY_008_GRAPH_QUERY_ENGINE.md) 📋
+- [STORY_016_XML_CONFIGURATION_PARSING](./STORY_016_XML_CONFIGURATION_PARSING.md) 📋
 
 ### Data Management
 
@@ -172,6 +180,7 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 - STORY_008 depends on STORY_002 ✅
 - STORY_005 depends on STORY_001 ✅ and STORY_004 ✅
 - STORY_012 depends on STORY_006 📋 and STORY_008 📋
+- STORY_016 depends on STORY_007 📋 (recommended for iterative development)
 
 ## Story Organization Complete
 
