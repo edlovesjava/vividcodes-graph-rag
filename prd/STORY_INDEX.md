@@ -56,6 +56,13 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 - **Status**: IN_PROGRESS
 - **Description**: Comprehensive multi-project repository support with hierarchical containment (Core infrastructure and SubProject models implemented)
 
+#### [STORY_007_UPSERT_PATTERN_IMPORT](./STORY_007_UPSERT_PATTERN_IMPORT.md)
+
+- **File**: [`STORY_007_UPSERT_PATTERN_IMPORT.md`](./STORY_007_UPSERT_PATTERN_IMPORT.md)
+- **Epic**: Data Management
+- **Status**: IN_PROGRESS
+- **Description**: Upsert pattern for updating existing nodes during re-imports
+
 ### Planned Stories 📋
 
 #### [STORY_006_MCP_INTEGRATION](./STORY_006_MCP_INTEGRATION.md)
@@ -64,13 +71,6 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 - **Epic**: Agent Integration
 - **Status**: NOT_STARTED
 - **Description**: MCP server for external agents to query the graph database
-
-#### [STORY_007_UPSERT_PATTERN_IMPORT](./STORY_007_UPSERT_PATTERN_IMPORT.md)
-
-- **File**: [`STORY_007_UPSERT_PATTERN_IMPORT.md`](./STORY_007_UPSERT_PATTERN_IMPORT.md)
-- **Epic**: Data Management
-- **Status**: NOT_STARTED
-- **Description**: Upsert pattern for updating existing nodes during re-imports
 
 #### [STORY_008_GRAPH_QUERY_ENGINE](./STORY_008_GRAPH_QUERY_ENGINE.md)
 
@@ -137,7 +137,7 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 ### Data Management
 
 - [STORY_003_DATA_MANAGEMENT_API](./STORY_003_DATA_MANAGEMENT_API.md) ✅
-- [STORY_007_UPSERT_PATTERN_IMPORT](./STORY_007_UPSERT_PATTERN_IMPORT.md) 📋
+- [STORY_007_UPSERT_PATTERN_IMPORT](./STORY_007_UPSERT_PATTERN_IMPORT.md) 🔄
 
 ### Enterprise Repository Structure Support
 
