@@ -33,6 +33,13 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 - **Status**: COMPLETED
 - **Description**: Clear, stats, and clear-and-ingest API endpoints
 
+#### [STORY_007_UPSERT_PATTERN_IMPORT](./STORY_007_UPSERT_PATTERN_IMPORT.md)
+
+- **File**: [`STORY_007_UPSERT_PATTERN_IMPORT.md`](./STORY_007_UPSERT_PATTERN_IMPORT.md)
+- **Epic**: Data Management
+- **Status**: COMPLETED
+- **Description**: Upsert pattern for intelligent node create/update/skip operations with perfect idempotency and real-world validation
+
 #### [STORY_013_CLASS_DEPENDENCY_ANALYSIS](./STORY_013_CLASS_DEPENDENCY_ANALYSIS.md)
 
 - **File**: [`STORY_013_CLASS_DEPENDENCY_ANALYSIS.md`](./STORY_013_CLASS_DEPENDENCY_ANALYSIS.md)
@@ -55,13 +62,6 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 - **Epic**: Enterprise Repository Structure Support
 - **Status**: IN_PROGRESS
 - **Description**: Comprehensive multi-project repository support with hierarchical containment (Core infrastructure and SubProject models implemented)
-
-#### [STORY_007_UPSERT_PATTERN_IMPORT](./STORY_007_UPSERT_PATTERN_IMPORT.md)
-
-- **File**: [`STORY_007_UPSERT_PATTERN_IMPORT.md`](./STORY_007_UPSERT_PATTERN_IMPORT.md)
-- **Epic**: Data Management
-- **Status**: IN_PROGRESS
-- **Description**: Upsert pattern for updating existing nodes during re-imports
 
 ### Planned Stories 📋
 
@@ -121,6 +121,13 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 - **Status**: NOT_STARTED
 - **Description**: Parse XML configuration files (Spring Context, iBATIS/MyBatis DAO) to capture dependency injection relationships missing from Java code analysis
 
+#### [STORY_017_GIT_HASH_OPTIMIZATION](./STORY_017_GIT_HASH_OPTIMIZATION.md)
+
+- **File**: [`STORY_017_GIT_HASH_OPTIMIZATION.md`](./STORY_017_GIT_HASH_OPTIMIZATION.md)
+- **Epic**: Performance Optimization
+- **Status**: NOT_STARTED
+- **Description**: Optimize upsert operations using git content hashes for 90%+ performance improvement on unchanged file re-ingestion
+
 ## Epic Mapping
 
 ### Repository Tracking Feature
@@ -137,7 +144,7 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 ### Data Management
 
 - [STORY_003_DATA_MANAGEMENT_API](./STORY_003_DATA_MANAGEMENT_API.md) ✅
-- [STORY_007_UPSERT_PATTERN_IMPORT](./STORY_007_UPSERT_PATTERN_IMPORT.md) 🔄
+- [STORY_007_UPSERT_PATTERN_IMPORT](./STORY_007_UPSERT_PATTERN_IMPORT.md) ✅
 
 ### Enterprise Repository Structure Support
 
@@ -164,6 +171,10 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 
 - [STORY_014_TEST_COVERAGE_IMPROVEMENT](./STORY_014_TEST_COVERAGE_IMPROVEMENT.md) 📋
 - [STORY_015_SPOTBUGS_FIXES](./STORY_015_SPOTBUGS_FIXES.md) 📋
+
+### Performance Optimization
+
+- [STORY_017_GIT_HASH_OPTIMIZATION](./STORY_017_GIT_HASH_OPTIMIZATION.md) 📋
 
 ## Status Legend
 
