@@ -10,6 +10,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.vividcodes.graphrag.model.dto.UpsertResult;
 import com.vividcodes.graphrag.model.graph.AnnotationNode;
 import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
@@ -183,9 +184,10 @@ class GraphServiceSubProjectTest {
         List<SubProjectNode> subProjectsToReturn = new ArrayList<>();
         
         @Override
-        public void saveSubProject(SubProjectNode subProjectNode) {
+        public UpsertResult saveSubProject(SubProjectNode subProjectNode) {
             subProjectSaved = true;
             lastSavedSubProject = subProjectNode;
+            return UpsertResult.inserted(subProjectNode.getId(), "SubProject", 1L, "test-op");
         }
         
         @Override
@@ -211,25 +213,39 @@ class GraphServiceSubProjectTest {
         
         // Empty implementations for other GraphService methods
         @Override
-        public void savePackage(PackageNode packageNode) {}
+        public UpsertResult savePackage(PackageNode packageNode) {
+            return UpsertResult.inserted(packageNode.getId(), "Package", 1L, "test-op");
+        }
         
         @Override
-        public void saveClass(ClassNode classNode) {}
+        public UpsertResult saveClass(ClassNode classNode) {
+            return UpsertResult.inserted(classNode.getId(), "Class", 1L, "test-op");
+        }
         
         @Override
-        public void saveMethod(MethodNode methodNode) {}
+        public UpsertResult saveMethod(MethodNode methodNode) {
+            return UpsertResult.inserted(methodNode.getId(), "Method", 1L, "test-op");
+        }
         
         @Override
-        public void saveField(FieldNode fieldNode) {}
+        public UpsertResult saveField(FieldNode fieldNode) {
+            return UpsertResult.inserted(fieldNode.getId(), "Field", 1L, "test-op");
+        }
         
         @Override
-        public void saveAnnotation(AnnotationNode annotationNode) {}
+        public UpsertResult saveAnnotation(AnnotationNode annotationNode) {
+            return UpsertResult.inserted(annotationNode.getId(), "Annotation", 1L, "test-op");
+        }
         
         @Override
-        public void saveRepository(RepositoryNode repositoryNode) {}
+        public UpsertResult saveRepository(RepositoryNode repositoryNode) {
+            return UpsertResult.inserted(repositoryNode.getId(), "Repository", 1L, "test-op");
+        }
         
         @Override
-        public void createRelationship(String fromId, String toId, String relationshipType) {}
+        public boolean createRelationship(String fromId, String toId, String relationshipType) {
+            return true;
+        }
         
         @Override
         public void clearAllData() {}
@@ -240,6 +256,15 @@ class GraphServiceSubProjectTest {
         }
         
         @Override
-        public void createRelationship(String fromId, String toId, String relationshipType, java.util.Map<String, Object> properties) {}
+        public boolean createRelationship(String fromId, String toId, String relationshipType, java.util.Map<String, Object> properties) {
+            return true;
+        }
+        
+        @Override
+        public List<UpsertResult> saveBatch(List<Object> nodes) {
+            return nodes.stream()
+                .map(node -> UpsertResult.inserted("test-id", "Test", 1L, "test-op"))
+                .collect(java.util.stream.Collectors.toList());
+        }
     }
 }

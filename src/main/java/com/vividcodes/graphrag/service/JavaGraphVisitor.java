@@ -106,8 +106,9 @@ public class JavaGraphVisitor extends VoidVisitorAdapter<Void> {
         
         // Create package node
         final PackageNode packageNode = new PackageNode(packageName, packageName, filePath);
-        LOGGER.info("Created package node: {} with ID: {}", packageNode.getName(), packageNode.getId());
-        graphService.savePackage(packageNode);
+        var packageResult = graphService.savePackage(packageNode);
+        LOGGER.info("Package node {}: {} with ID: {} - {}", packageResult.getOperationType().name().toLowerCase(), 
+                   packageNode.getName(), packageNode.getId(), packageResult.isSuccess() ? "SUCCESS" : "FAILED");
         createdNodes.add(packageNode);
         this.currentPackage = packageNode;  // Set the current package for relationship creation
         LOGGER.info("Added package node to createdNodes list. Total nodes: {}", createdNodes.size());
@@ -141,8 +142,9 @@ public class JavaGraphVisitor extends VoidVisitorAdapter<Void> {
         if (classDecl.isPublic() || parserConfig.isIncludePrivate()) {
             LOGGER.info("Processing class: {}", classDecl.getNameAsString());
             currentClass = nodeFactory.createClassNode(classDecl, packageName, filePath, repositoryMetadata, containingSubProject);
-            LOGGER.info("Created class node: {}", currentClass.getId());
-            graphService.saveClass(currentClass);
+            var classResult = graphService.saveClass(currentClass);
+            LOGGER.info("Class node {}: {} with ID: {} - {}", classResult.getOperationType().name().toLowerCase(),
+                       currentClass.getName(), currentClass.getId(), classResult.isSuccess() ? "SUCCESS" : "FAILED");
             createdNodes.add(currentClass);
             
             // Clear current methods and fields for this class
@@ -197,7 +199,9 @@ public class JavaGraphVisitor extends VoidVisitorAdapter<Void> {
         if (methodDecl.isPublic() || parserConfig.isIncludePrivate()) {
             final MethodNode methodNode = nodeFactory.createMethodNode(methodDecl, 
                 currentClass != null ? currentClass.getName() : "", packageName, filePath);
-            graphService.saveMethod(methodNode);
+            var methodResult = graphService.saveMethod(methodNode);
+            LOGGER.debug("Method node {}: {}.{} - {}", methodResult.getOperationType().name().toLowerCase(),
+                        methodNode.getClassName(), methodNode.getName(), methodResult.isSuccess() ? "SUCCESS" : "FAILED");
             currentMethods.add(methodNode);
             createdNodes.add(methodNode);
             
@@ -235,7 +239,9 @@ public class JavaGraphVisitor extends VoidVisitorAdapter<Void> {
                 final String fieldName = variable.getNameAsString();
                 final FieldNode fieldNode = nodeFactory.createFieldNode(fieldName, fieldDecl, 
                     currentClass != null ? currentClass.getName() : "", packageName, filePath);
-                graphService.saveField(fieldNode);
+                var fieldResult = graphService.saveField(fieldNode);
+                LOGGER.debug("Field node {}: {}.{} - {}", fieldResult.getOperationType().name().toLowerCase(),
+                            fieldNode.getClassName(), fieldNode.getName(), fieldResult.isSuccess() ? "SUCCESS" : "FAILED");
                 currentFields.add(fieldNode);
                 createdNodes.add(fieldNode);
                 

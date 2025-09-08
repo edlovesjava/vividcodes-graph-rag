@@ -21,6 +21,7 @@ import org.neo4j.driver.Session;
 import org.neo4j.driver.Values;
 import org.springframework.test.util.ReflectionTestUtils;
 import com.vividcodes.graphrag.config.ParserConfig;
+import com.vividcodes.graphrag.model.dto.UpsertResult;
 import com.vividcodes.graphrag.model.graph.AnnotationNode;
 import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
@@ -56,8 +57,9 @@ class GraphRelationshipIntegrationTest {
         neo4jDriver = GraphDatabase.driver("bolt://localhost:7687", 
             AuthTokens.basic("neo4j", "password"));
         
-        // Create GraphService with real driver
-        graphService = new GraphServiceImpl(neo4jDriver);
+        // Create GraphService with real driver and mock UpsertService
+        UpsertService mockUpsertService = org.mockito.Mockito.mock(UpsertService.class);
+        graphService = new GraphServiceImpl(neo4jDriver, mockUpsertService);
         
         // Create JavaParserService
         ParserConfig parserConfig = new ParserConfig();
@@ -791,48 +793,55 @@ class GraphRelationshipIntegrationTest {
         private static class SimpleMockGraphService implements GraphService {
             
             @Override
-            public void savePackage(PackageNode packageNode) {
-                // Mock implementation - do nothing
+            public UpsertResult savePackage(PackageNode packageNode) {
+                return UpsertResult.inserted(packageNode.getId(), "Package", 1L, "test-op");
             }
             
             @Override
-            public void saveClass(ClassNode classNode) {
-                // Mock implementation - do nothing
+            public UpsertResult saveClass(ClassNode classNode) {
+                return UpsertResult.inserted(classNode.getId(), "Class", 1L, "test-op");
             }
             
             @Override
-            public void saveMethod(MethodNode methodNode) {
-                // Mock implementation - do nothing
+            public UpsertResult saveMethod(MethodNode methodNode) {
+                return UpsertResult.inserted(methodNode.getId(), "Method", 1L, "test-op");
             }
             
             @Override
-            public void saveField(FieldNode fieldNode) {
-                // Mock implementation - do nothing
+            public UpsertResult saveField(FieldNode fieldNode) {
+                return UpsertResult.inserted(fieldNode.getId(), "Field", 1L, "test-op");
             }
             
             @Override
-            public void saveAnnotation(AnnotationNode annotationNode) {
-                // Mock implementation - do nothing
+            public UpsertResult saveAnnotation(AnnotationNode annotationNode) {
+                return UpsertResult.inserted(annotationNode.getId(), "Annotation", 1L, "test-op");
             }
             
             @Override
-            public void saveRepository(RepositoryNode repositoryNode) {
-                // Mock implementation - do nothing
+            public UpsertResult saveRepository(RepositoryNode repositoryNode) {
+                return UpsertResult.inserted(repositoryNode.getId(), "Repository", 1L, "test-op");
             }
             
             @Override
-            public void saveSubProject(SubProjectNode subProjectNode) {
-                // Mock implementation - do nothing
+            public UpsertResult saveSubProject(SubProjectNode subProjectNode) {
+                return UpsertResult.inserted(subProjectNode.getId(), "SubProject", 1L, "test-op");
             }
             
             @Override
-            public void createRelationship(String fromId, String toId, String relationshipType) {
-                // Mock implementation - do nothing
+            public boolean createRelationship(String fromId, String toId, String relationshipType) {
+                return true;
             }
             
             @Override
-            public void createRelationship(String fromId, String toId, String relationshipType, java.util.Map<String, Object> properties) {
-                // Mock implementation - do nothing
+            public boolean createRelationship(String fromId, String toId, String relationshipType, java.util.Map<String, Object> properties) {
+                return true;
+            }
+            
+            @Override
+            public List<UpsertResult> saveBatch(List<Object> nodes) {
+                return nodes.stream()
+                    .map(node -> UpsertResult.inserted("test-id", "Test", 1L, "test-op"))
+                    .collect(java.util.stream.Collectors.toList());
             }
             
             @Override

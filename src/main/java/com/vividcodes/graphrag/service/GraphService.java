@@ -1,5 +1,7 @@
 package com.vividcodes.graphrag.service;
 
+import java.util.List;
+import com.vividcodes.graphrag.model.dto.UpsertResult;
 import com.vividcodes.graphrag.model.graph.AnnotationNode;
 import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
@@ -10,19 +12,19 @@ import com.vividcodes.graphrag.model.graph.SubProjectNode;
 
 public interface GraphService {
     
-    void savePackage(PackageNode packageNode);
+    UpsertResult savePackage(PackageNode packageNode);
     
-    void saveClass(ClassNode classNode);
+    UpsertResult saveClass(ClassNode classNode);
     
-    void saveMethod(MethodNode methodNode);
+    UpsertResult saveMethod(MethodNode methodNode);
     
-    void saveField(FieldNode fieldNode);
+    UpsertResult saveField(FieldNode fieldNode);
     
-    void saveAnnotation(AnnotationNode annotationNode);
+    UpsertResult saveAnnotation(AnnotationNode annotationNode);
     
-    void saveRepository(RepositoryNode repositoryNode);
+    UpsertResult saveRepository(RepositoryNode repositoryNode);
     
-    void saveSubProject(SubProjectNode subProjectNode);
+    UpsertResult saveSubProject(SubProjectNode subProjectNode);
     
     SubProjectNode findSubProjectById(String id);
     
@@ -30,9 +32,9 @@ public interface GraphService {
     
     void deleteSubProject(String id);
     
-    void createRelationship(String fromId, String toId, String relationshipType);
+    boolean createRelationship(String fromId, String toId, String relationshipType);
     
-    void createRelationship(String fromId, String toId, String relationshipType, java.util.Map<String, Object> properties);
+    boolean createRelationship(String fromId, String toId, String relationshipType, java.util.Map<String, Object> properties);
     
     /**
      * Clear all data from the graph database
@@ -43,4 +45,13 @@ public interface GraphService {
      * Get statistics about the current data in the graph database
      */
     java.util.Map<String, Object> getDataStatistics();
+    
+    /**
+     * Perform batch upsert operations for multiple nodes in a single transaction.
+     * 
+     * @param nodes List of nodes to upsert (mixed types allowed)
+     * @return List of UpsertResult for each node in the same order
+     */
+    List<UpsertResult> saveBatch(List<Object> nodes);
+    
 } 

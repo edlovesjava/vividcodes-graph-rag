@@ -312,7 +312,9 @@ public class DependencyAnalyzer {
         internalClass.setUpdatedAt(now);
         
         // Save to graph database
-        graphService.saveClass(internalClass);
+        var classResult = graphService.saveClass(internalClass);
+        LOGGER.debug("Internal class node {}: {} - {}", classResult.getOperationType().name().toLowerCase(),
+                    internalClass.getName(), classResult.isSuccess() ? "SUCCESS" : "FAILED");
         
         return internalClass;
     }
@@ -367,7 +369,9 @@ public class DependencyAnalyzer {
         }
 
         // Save annotation node
-        graphService.saveAnnotation(annotationNode);
+        var annotationResult = graphService.saveAnnotation(annotationNode);
+        LOGGER.debug("Annotation node {}: {} - {}", annotationResult.getOperationType().name().toLowerCase(),
+                    annotationNode.getName(), annotationResult.isSuccess() ? "SUCCESS" : "FAILED");
 
         // Create USES relationship based on target type
         final String context = createAnnotationContext(targetElement, targetType);
@@ -436,7 +440,9 @@ public class DependencyAnalyzer {
         }
 
         // Save annotation node
-        graphService.saveAnnotation(annotationNode);
+        var annotationResult2 = graphService.saveAnnotation(annotationNode);
+        LOGGER.debug("Parameter annotation node {}: {} - {}", annotationResult2.getOperationType().name().toLowerCase(),
+                    annotationNode.getName(), annotationResult2.isSuccess() ? "SUCCESS" : "FAILED");
 
         // Create USES relationship from method to annotation for parameter
         final String context = "parameter: " + parameter.getName() + " (method: " + methodNode.getName() + ")";
