@@ -7,4 +7,16 @@ target/
 # Ignore all files in the .vscode directory
 .vscode/
 
-s
+# Log files
+*.log
+app.log
+startup.log
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
