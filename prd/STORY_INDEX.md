@@ -121,6 +121,19 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 - **Status**: NOT_STARTED
 - **Description**: Parse XML configuration files (Spring Context, iBATIS/MyBatis DAO) to capture dependency injection relationships missing from Java code analysis
 
+#### [STORY_018_FILE_NODE_MODELING](./STORY_018_FILE_NODE_MODELING.md)
+
+- **File**: [`STORY_018_FILE_NODE_MODELING.md`](./STORY_018_FILE_NODE_MODELING.md)
+- **Epic**: Schema Architecture Enhancement
+- **Status**: NOT_STARTED
+- **Description**: Introduce File nodes as first-class entities for enhanced schema architecture, file-level metadata, content hashes, and foundation for performance optimization
+
+#### [STORY_017_GIT_HASH_OPTIMIZATION](./STORY_017_GIT_HASH_OPTIMIZATION.md)
+
+- **File**: [`STORY_017_GIT_HASH_OPTIMIZATION.md`](./STORY_017_GIT_HASH_OPTIMIZATION.md)
+- **Epic**: Performance Optimization
+- **Status**: NOT_STARTED
+- **Description**: Optimize upsert operations using git content hashes for 90%+ performance improvement on unchanged file re-ingestion
 ## Epic Mapping
 
 ### Repository Tracking Feature
@@ -165,6 +178,17 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 - [STORY_014_TEST_COVERAGE_IMPROVEMENT](./STORY_014_TEST_COVERAGE_IMPROVEMENT.md) 📋
 - [STORY_015_SPOTBUGS_FIXES](./STORY_015_SPOTBUGS_FIXES.md) 📋
 
+<<<<<<< Updated upstream
+=======
+### Schema Architecture Enhancement
+
+- [STORY_018_FILE_NODE_MODELING](./STORY_018_FILE_NODE_MODELING.md) 📋
+
+### Performance Optimization
+
+- [STORY_017_GIT_HASH_OPTIMIZATION](./STORY_017_GIT_HASH_OPTIMIZATION.md) 📋
+
+>>>>>>> Stashed changes
 ## Status Legend
 
 - ✅ **COMPLETED**: Story is fully implemented and tested
@@ -181,6 +205,8 @@ All stories use the standardized template: `STORY_TEMPLATE.md`
 - STORY_005 depends on STORY_001 ✅ and STORY_004 ✅
 - STORY_012 depends on STORY_006 📋 and STORY_008 📋
 - STORY_016 depends on STORY_007 📋 (recommended for iterative development)
+- STORY_017 depends on STORY_018 📋 (File nodes provide foundation for content hash optimization)
+- STORY_018 depends on STORY_007 ✅ (upsert infrastructure required)
 
 ## Story Organization Complete
 
