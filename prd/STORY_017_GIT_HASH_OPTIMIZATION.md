@@ -7,7 +7,7 @@
 - **Epic**: Performance Optimization
 - **Priority**: HIGH
 - **Estimated Duration**: 2 weeks
-- **Dependencies**: STORY_007_UPSERT_PATTERN_IMPORT (COMPLETED)
+- **Dependencies**: STORY_007_UPSERT_PATTERN_IMPORT (COMPLETED), STORY_018_FILE_NODE_MODELING (NOT_STARTED)
 - **Status**: NOT_STARTED
 
 ## Overview
@@ -23,16 +23,19 @@ Optimize the upsert system by using git content hashes to determine file changes
 ## Background
 
 STORY_007 successfully implemented intelligent upsert operations using property-level comparison. However, testing with the catalog-service project revealed that even SKIP operations require:
+
 1. Parsing Java files into AST
-2. Extracting all node properties  
+2. Extracting all node properties
 3. Comparing 15+ properties per class
 4. Database queries for existence checks
 
 This results in ~1:05 duration even for identical re-ingestion. Git content hashes provide a much more efficient approach:
+
 - **Current approach**: Parse → Compare → Skip (25% faster on re-runs)
 - **Proposed approach**: Hash check → Skip (95% faster expected for unchanged files)
 
 Real-world performance impact:
+
 - First ingestion: 1:30 (1,326 nodes created)
 - Second ingestion: 1:05 (all nodes skipped)
 - **Target with git hashes**: ~10-20 seconds for identical re-ingestion
@@ -67,15 +70,19 @@ Real-world performance impact:
 
 ### Architecture Changes
 
-The optimization adds a new caching layer between file system and upsert operations:
+The optimization adds a new caching layer between file system and upsert operations, leveraging File nodes from STORY_018:
 
 ```
-File System → GitHashCacheService → UpsertService → Neo4j
+File System → GitHashCacheService → File Node (w/ content_hash) → UpsertService → Neo4j
 ```
 
 Key performance improvement:
+
 - **Before**: File → Parse → Extract Properties → Compare → Skip
 - **After**: File → Hash Lookup → Skip (if unchanged)
+- **With STORY_018**: File Node content_hash provides perfect foundation for hash comparison
+
+**Note**: This story will be significantly more efficient when built on STORY_018 File nodes, as content hashes will be stored directly in File nodes rather than duplicated across Class/Method/Field nodes.
 
 ### New Components
 
@@ -160,6 +167,7 @@ No external API changes - purely internal optimization.
 ### Internal Dependencies
 
 - **STORY_007**: ✅ COMPLETED - Provides upsert infrastructure to enhance
+- **STORY_018**: 📋 NOT_STARTED - File nodes with content hashes provide optimal foundation for hash-based optimization
 - **Current upsert system**: Proven and tested foundation
 
 ## Deliverables
@@ -194,7 +202,7 @@ No external API changes - purely internal optimization.
 - **Mitigation**: Fallback to content-based hashing, clear error messages
 
 - **Risk**: Memory consumption for large repository caches
-- **Impact**: MEDIUM  
+- **Impact**: MEDIUM
 - **Mitigation**: Implement cache size limits and LRU eviction
 
 - **Risk**: Hash collisions causing incorrect skip decisions
@@ -219,7 +227,7 @@ No external API changes - purely internal optimization.
 # Performance comparison example
 time curl -X POST http://localhost:8080/api/v1/ingest \
   -d '{"sourcePath": "/path/to/large-project"}'
-  
+
 # Before optimization: ~90 seconds
 # After optimization: ~15 seconds (unchanged files)
 ```
@@ -241,10 +249,10 @@ if (currentHash.equals(storedHash)) {
 
 ```
 Catalog Service (602 classes, 1,326 total nodes):
-- Current STORY_007: 
+- Current STORY_007:
   * First run: 1:30
   * Second run: 1:05 (25% improvement)
-  
+
 - Expected STORY_017:
   * First run: 1:30 (same - full processing needed)
   * Second run: 0:15 (85% improvement over current)
@@ -257,12 +265,14 @@ Catalog Service (602 classes, 1,326 total nodes):
 ### Phase 1: Core Git Hash Infrastructure (Week 1)
 
 - [ ] **Day 1-2**: GitHashCacheService implementation
+
   - [ ] Batch git ls-files -s command execution
   - [ ] Parse git index into hash cache
   - [ ] Individual file hash retrieval with caching
   - [ ] Handle git command failures and edge cases
 
-- [ ] **Day 3-4**: Node model enhancements  
+- [ ] **Day 3-4**: Node model enhancements
+
   - [ ] Add contentHash property to ClassNode, MethodNode, FieldNode
   - [ ] Database migration scripts for schema changes
   - [ ] Update constructors and serialization
@@ -276,12 +286,14 @@ Catalog Service (602 classes, 1,326 total nodes):
 ### Phase 2: Upsert Integration and Testing (Week 2)
 
 - [ ] **Day 1-2**: UpsertService hash integration
+
   - [ ] Modify UpsertServiceImpl for hash-first logic
   - [ ] Implement hash comparison before property parsing
   - [ ] Update audit trail to track hash-based skips
   - [ ] Ensure backward compatibility for nodes without hashes
 
 - [ ] **Day 3-4**: Comprehensive testing
+
   - [ ] Unit tests for all hash-based logic
   - [ ] Integration tests with real git repositories
   - [ ] Performance benchmarks with large codebases
@@ -297,6 +309,7 @@ Catalog Service (602 classes, 1,326 total nodes):
 ### Phase 2.5 Integration
 
 Git hash optimization provides excellent foundation for LLM MCP integration:
+
 - **Fast re-analysis**: Only process files that actually changed
 - **Incremental insights**: LLM can focus on modified code sections
 - **Change tracking**: Hash-based change detection for smarter AI analysis
@@ -304,8 +317,9 @@ Git hash optimization provides excellent foundation for LLM MCP integration:
 ### Phase 3 Integration
 
 Advanced features benefit from git hash optimization:
+
 - **Temporal analysis**: Track code evolution through hash history
-- **Change impact**: Correlate hash changes with dependency relationships  
+- **Change impact**: Correlate hash changes with dependency relationships
 - **Smart caching**: Cache LLM analysis results based on content hashes
 
 ## Acceptance Criteria Checklist
@@ -334,7 +348,7 @@ Advanced features benefit from git hash optimization:
 ### Won't Have
 
 - [ ] **Complex git history**: Deep git history analysis beyond current state
-- [ ] **Branch comparison**: Cross-branch hash comparison capabilities  
+- [ ] **Branch comparison**: Cross-branch hash comparison capabilities
 - [ ] **Remote git operations**: Direct integration with remote git repositories
 - [ ] **Binary file analysis**: Hash-based analysis of non-text files
 
@@ -348,7 +362,8 @@ The implementation prioritizes robustness over complexity - fallback strategies 
 
 ## Related Stories
 
-- **STORY_007_UPSERT_PATTERN_IMPORT**: Direct foundation - provides upsert infrastructure to optimize
-- **STORY_001_REPOSITORY_TRACKING**: Provides git integration foundation
-- **STORY_005_MULTI_PROJECT_REPOSITORY_SUPPORT**: Will benefit from performance improvements
-- **STORY_016_XML_CONFIGURATION_PARSING**: Can leverage same hash-based optimization approach
+- **STORY_007_UPSERT_PATTERN_IMPORT**: ✅ Direct foundation - provides upsert infrastructure to optimize
+- **STORY_018_FILE_NODE_MODELING**: 📋 Critical dependency - File nodes with content hashes provide optimal foundation for performance optimization
+- **STORY_001_REPOSITORY_TRACKING**: ✅ Provides git integration foundation
+- **STORY_005_MULTI_PROJECT_REPOSITORY_SUPPORT**: 🔄 Will benefit from performance improvements
+- **STORY_016_XML_CONFIGURATION_PARSING**: 📋 Can leverage same hash-based optimization approach
