@@ -3,6 +3,8 @@ package com.vividcodes.graphrag.service;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import com.github.javaparser.ast.body.ClassOrInterfaceDeclaration;
@@ -21,6 +23,8 @@ import com.vividcodes.graphrag.model.graph.SubProjectNode;
  */
 @Component
 public class NodeFactory {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(NodeFactory.class);
 
     private final TypeResolver typeResolver;
 
@@ -187,7 +191,8 @@ public class NodeFactory {
         externalClass.setUpdatedAt(now);
         
         // Save to graph database
-        graphService.saveClass(externalClass);
+        var result = graphService.saveClass(externalClass);
+        LOGGER.debug("Created external class: {} - {}", externalClass.getName(), result.getOperationType());
         
         return externalClass;
     }

@@ -315,26 +315,27 @@ ORDER BY a.timestamp DESC
 
 ## Implementation Phases
 
-### Phase 1: Core Upsert Logic (Week 1)
+> **📋 Detailed Task Breakdown**: See [`STORY_007_TASK_BREAKDOWN.md`](./STORY_007_TASK_BREAKDOWN.md) for comprehensive task-by-task implementation plan with 45 specific subtasks, dependencies, and deliverables.
 
-- [ ] Implement UpsertService
-- [ ] Create NodeIdentifierService
-- [ ] Add unique constraints to database
-- [ ] Basic upsert operations for all node types
+### Phase 1: Foundation & Core Services (Week 1)
 
-### Phase 2: Enhanced Features (Week 2)
+- [ ] **Task 1.1**: Database Schema Preparation - Create unique constraints for all node types
+- [ ] **Task 1.2**: NodeIdentifierService Implementation - Create service for unique node identification  
+- [ ] **Task 1.3**: Core UpsertService Implementation - Implement basic upsert operations for all node types
+- [ ] **Task 1.4**: Basic Upsert Integration with GraphService - Extend GraphService with upsert capabilities
 
-- [ ] Implement ConflictResolutionService
-- [ ] Add AuditService for tracking operations
-- [ ] Support incremental and full upsert modes
-- [ ] Add configuration options
+### Phase 2: Enhanced Features & Audit Trail (Week 2)
 
-### Phase 3: Integration and Testing (Week 3)
+- [ ] **Task 2.1**: ConflictResolutionService Implementation - Create configurable conflict resolution strategies
+- [ ] **Task 2.2**: AuditService Implementation - Create audit trail tracking for all upsert operations
+- [ ] **Task 2.3**: Upsert Mode Configuration & API Enhancement - Extend API with upsert options
 
-- [ ] Integrate with existing import process
-- [ ] Add comprehensive testing
-- [ ] Performance optimization
-- [ ] Documentation and examples
+### Phase 3: Integration & Performance Optimization (Week 3)
+
+- [ ] **Task 3.1**: JavaParserService Integration - Modify JavaParserService to support upsert mode
+- [ ] **Task 3.2**: Performance Optimization & Monitoring - Implement batch operations and performance monitoring
+- [ ] **Task 3.3**: Comprehensive Testing & Validation - Create end-to-end test suite with real-world validation
+- [ ] **Task 3.4**: Documentation & User Guide - Create technical and user documentation
 
 ## Future Considerations
 

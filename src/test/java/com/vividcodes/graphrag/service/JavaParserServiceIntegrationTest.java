@@ -3,12 +3,14 @@ package com.vividcodes.graphrag.service;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.springframework.test.util.ReflectionTestUtils;
 import com.vividcodes.graphrag.config.ParserConfig;
+import com.vividcodes.graphrag.model.dto.UpsertResult;
 import com.vividcodes.graphrag.model.graph.AnnotationNode;
 
 class JavaParserServiceIntegrationTest {
@@ -99,44 +101,50 @@ class JavaParserServiceIntegrationTest {
         }
         
         @Override
-        public void savePackage(com.vividcodes.graphrag.model.graph.PackageNode packageNode) {
+        public UpsertResult savePackage(com.vividcodes.graphrag.model.graph.PackageNode packageNode) {
             savePackageCount.incrementAndGet();
+            return UpsertResult.inserted(packageNode.getId(), "Package", 1L, "test-op");
         }
         
         @Override
-        public void saveClass(com.vividcodes.graphrag.model.graph.ClassNode classNode) {
+        public UpsertResult saveClass(com.vividcodes.graphrag.model.graph.ClassNode classNode) {
             saveClassCount.incrementAndGet();
+            return UpsertResult.inserted(classNode.getId(), "Class", 1L, "test-op");
         }
         
         @Override
-        public void saveMethod(com.vividcodes.graphrag.model.graph.MethodNode methodNode) {
+        public UpsertResult saveMethod(com.vividcodes.graphrag.model.graph.MethodNode methodNode) {
             saveMethodCount.incrementAndGet();
+            return UpsertResult.inserted(methodNode.getId(), "Method", 1L, "test-op");
         }
         
         @Override
-        public void saveField(com.vividcodes.graphrag.model.graph.FieldNode fieldNode) {
+        public UpsertResult saveField(com.vividcodes.graphrag.model.graph.FieldNode fieldNode) {
             saveFieldCount.incrementAndGet();
+            return UpsertResult.inserted(fieldNode.getId(), "Field", 1L, "test-op");
         }
         
         @Override
-        public void saveAnnotation(AnnotationNode annotationNode) {
-            // Mock implementation - do nothing
+        public UpsertResult saveAnnotation(AnnotationNode annotationNode) {
+            return UpsertResult.inserted(annotationNode.getId(), "Annotation", 1L, "test-op");
         }
         
         @Override
-        public void createRelationship(String fromId, String toId, String relationshipType) {
+        public boolean createRelationship(String fromId, String toId, String relationshipType) {
             createRelationshipCount.incrementAndGet();
+            return true;
         }
         
         @Override
-        public void createRelationship(String fromId, String toId, String relationshipType, 
+        public boolean createRelationship(String fromId, String toId, String relationshipType, 
                                     java.util.Map<String, Object> properties) {
             createRelationshipCount.incrementAndGet();
+            return true;
         }
         
         @Override
-        public void saveRepository(com.vividcodes.graphrag.model.graph.RepositoryNode repositoryNode) {
-            // Mock implementation - do nothing
+        public UpsertResult saveRepository(com.vividcodes.graphrag.model.graph.RepositoryNode repositoryNode) {
+            return UpsertResult.inserted(repositoryNode.getId(), "Repository", 1L, "test-op");
         }
         
         @Override
@@ -151,8 +159,15 @@ class JavaParserServiceIntegrationTest {
         }
         
         @Override
-        public void saveSubProject(com.vividcodes.graphrag.model.graph.SubProjectNode subProjectNode) {
-            // Mock implementation - do nothing
+        public List<UpsertResult> saveBatch(List<Object> nodes) {
+            return nodes.stream()
+                .map(node -> UpsertResult.inserted("test-id", "Test", 1L, "test-op"))
+                .collect(java.util.stream.Collectors.toList());
+        }
+        
+        @Override
+        public UpsertResult saveSubProject(com.vividcodes.graphrag.model.graph.SubProjectNode subProjectNode) {
+            return UpsertResult.inserted(subProjectNode.getId(), "SubProject", 1L, "test-op");
         }
         
         @Override

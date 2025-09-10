@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.vividcodes.graphrag.model.dto.UpsertResult;
 import com.vividcodes.graphrag.model.graph.AnnotationNode;
 import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
@@ -348,49 +349,55 @@ class GraphRelationshipValidationTest {
     private static class MockGraphService implements GraphService {
         
         @Override
-        public void savePackage(PackageNode packageNode) {
+        public UpsertResult savePackage(PackageNode packageNode) {
             // Mock implementation - just validate the node
             assertNotNull(packageNode, "PackageNode should not be null");
             assertNotNull(packageNode.getId(), "PackageNode ID should not be null");
+            return UpsertResult.inserted(packageNode.getId(), "Package", 1L, "test-op");
         }
         
         @Override
-        public void saveClass(ClassNode classNode) {
+        public UpsertResult saveClass(ClassNode classNode) {
             // Mock implementation - just validate the node
             assertNotNull(classNode, "ClassNode should not be null");
             assertNotNull(classNode.getId(), "ClassNode ID should not be null");
+            return UpsertResult.inserted(classNode.getId(), "Class", 1L, "test-op");
         }
         
         @Override
-        public void saveMethod(MethodNode methodNode) {
+        public UpsertResult saveMethod(MethodNode methodNode) {
             // Mock implementation - just validate the node
             assertNotNull(methodNode, "MethodNode should not be null");
             assertNotNull(methodNode.getId(), "MethodNode ID should not be null");
+            return UpsertResult.inserted(methodNode.getId(), "Method", 1L, "test-op");
         }
         
         @Override
-        public void saveField(FieldNode fieldNode) {
+        public UpsertResult saveField(FieldNode fieldNode) {
             // Mock implementation - just validate the node
             assertNotNull(fieldNode, "FieldNode should not be null");
             assertNotNull(fieldNode.getId(), "FieldNode ID should not be null");
+            return UpsertResult.inserted(fieldNode.getId(), "Field", 1L, "test-op");
         }
         
         @Override
-        public void saveAnnotation(AnnotationNode annotationNode) {
+        public UpsertResult saveAnnotation(AnnotationNode annotationNode) {
             // Mock implementation - just validate the node
             assertNotNull(annotationNode, "AnnotationNode should not be null");
             assertNotNull(annotationNode.getId(), "AnnotationNode ID should not be null");
+            return UpsertResult.inserted(annotationNode.getId(), "Annotation", 1L, "test-op");
         }
         
         @Override
-        public void saveRepository(com.vividcodes.graphrag.model.graph.RepositoryNode repositoryNode) {
+        public UpsertResult saveRepository(com.vividcodes.graphrag.model.graph.RepositoryNode repositoryNode) {
             // Mock implementation - just validate the node
             assertNotNull(repositoryNode, "RepositoryNode should not be null");
             assertNotNull(repositoryNode.getId(), "RepositoryNode ID should not be null");
+            return UpsertResult.inserted(repositoryNode.getId(), "Repository", 1L, "test-op");
         }
         
         @Override
-        public void createRelationship(String fromId, String toId, String relationshipType) {
+        public boolean createRelationship(String fromId, String toId, String relationshipType) {
             // Validate inputs
             validateRelationshipInputs(fromId, toId, relationshipType);
             
@@ -402,10 +409,11 @@ class GraphRelationshipValidationTest {
             if (!validTypes.contains(relationshipType)) {
                 throw new IllegalArgumentException("Invalid relationship type: " + relationshipType);
             }
+            return true;
         }
         
         @Override
-        public void createRelationship(String fromId, String toId, String relationshipType, Map<String, Object> properties) {
+        public boolean createRelationship(String fromId, String toId, String relationshipType, Map<String, Object> properties) {
             // Validate inputs
             validateRelationshipInputs(fromId, toId, relationshipType);
             
@@ -422,6 +430,7 @@ class GraphRelationshipValidationTest {
             if (properties != null) {
                 assertFalse(properties.isEmpty(), "Properties should not be empty if provided");
             }
+            return true;
         }
         
         private void validateRelationshipInputs(String fromId, String toId, String relationshipType) {
@@ -448,10 +457,11 @@ class GraphRelationshipValidationTest {
         }
         
         @Override
-        public void saveSubProject(com.vividcodes.graphrag.model.graph.SubProjectNode subProjectNode) {
+        public UpsertResult saveSubProject(com.vividcodes.graphrag.model.graph.SubProjectNode subProjectNode) {
             // Mock implementation - just validate the node
             assertNotNull(subProjectNode, "SubProjectNode should not be null");
             assertNotNull(subProjectNode.getId(), "SubProjectNode ID should not be null");
+            return UpsertResult.inserted(subProjectNode.getId(), "SubProject", 1L, "test-op");
         }
         
         @Override
@@ -472,6 +482,13 @@ class GraphRelationshipValidationTest {
             if (id == null || id.trim().isEmpty()) {
                 throw new IllegalArgumentException("SubProject ID cannot be null or empty");
             }
+        }
+        
+        @Override
+        public List<UpsertResult> saveBatch(List<Object> nodes) {
+            return nodes.stream()
+                .map(node -> UpsertResult.inserted("test-id", "Test", 1L, "test-op"))
+                .collect(java.util.stream.Collectors.toList());
         }
     }
 } 

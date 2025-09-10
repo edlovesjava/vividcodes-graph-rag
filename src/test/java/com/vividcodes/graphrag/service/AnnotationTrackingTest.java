@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,6 +15,7 @@ import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.expr.MarkerAnnotationExpr;
 import com.github.javaparser.ast.expr.SingleMemberAnnotationExpr;
+import com.vividcodes.graphrag.model.dto.UpsertResult;
 import com.vividcodes.graphrag.model.graph.AnnotationNode;
 import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
@@ -153,50 +155,60 @@ class AnnotationTrackingTest {
         private AnnotationNode lastSavedAnnotation;
         
         @Override
-        public void savePackage(PackageNode packageNode) {
-            // Mock implementation
+        public UpsertResult savePackage(PackageNode packageNode) {
+            return UpsertResult.inserted(packageNode.getId(), "Package", 1L, "test-op");
         }
         
         @Override
-        public void saveClass(ClassNode classNode) {
-            // Mock implementation
+        public UpsertResult saveClass(ClassNode classNode) {
+            return UpsertResult.inserted(classNode.getId(), "Class", 1L, "test-op");
         }
         
         @Override
-        public void saveMethod(MethodNode methodNode) {
-            // Mock implementation
+        public UpsertResult saveMethod(MethodNode methodNode) {
+            return UpsertResult.inserted(methodNode.getId(), "Method", 1L, "test-op");
         }
         
         @Override
-        public void saveField(FieldNode fieldNode) {
-            // Mock implementation
+        public UpsertResult saveField(FieldNode fieldNode) {
+            return UpsertResult.inserted(fieldNode.getId(), "Field", 1L, "test-op");
         }
         
         @Override
-        public void saveAnnotation(AnnotationNode annotationNode) {
+        public UpsertResult saveAnnotation(AnnotationNode annotationNode) {
             annotationSaveCount.incrementAndGet();
             lastSavedAnnotation = annotationNode;
+            return UpsertResult.inserted(annotationNode.getId(), "Annotation", 1L, "test-op");
         }
         
         @Override
-        public void saveRepository(RepositoryNode repositoryNode) {
-            // Mock implementation
+        public UpsertResult saveRepository(RepositoryNode repositoryNode) {
+            return UpsertResult.inserted(repositoryNode.getId(), "Repository", 1L, "test-op");
         }
         
         @Override
-        public void saveSubProject(SubProjectNode subProjectNode) {
-            // Mock implementation
+        public UpsertResult saveSubProject(SubProjectNode subProjectNode) {
+            return UpsertResult.inserted(subProjectNode.getId(), "SubProject", 1L, "test-op");
         }
         
         @Override
-        public void createRelationship(String fromId, String toId, String relationshipType) {
+        public boolean createRelationship(String fromId, String toId, String relationshipType) {
             relationshipCount.incrementAndGet();
+            return true;
         }
         
         @Override
-        public void createRelationship(String fromId, String toId, String relationshipType, 
+        public boolean createRelationship(String fromId, String toId, String relationshipType, 
                                      Map<String, Object> properties) {
             relationshipCount.incrementAndGet();
+            return true;
+        }
+        
+        @Override
+        public List<UpsertResult> saveBatch(List<Object> nodes) {
+            return nodes.stream()
+                .map(node -> UpsertResult.inserted("test-id", "Test", 1L, "test-op"))
+                .collect(java.util.stream.Collectors.toList());
         }
         
         @Override

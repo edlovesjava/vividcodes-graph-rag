@@ -3,6 +3,7 @@ package com.vividcodes.graphrag.service;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,6 +12,7 @@ import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseResult;
 import com.github.javaparser.ast.CompilationUnit;
 import com.github.javaparser.ast.expr.AnnotationExpr;
+import com.vividcodes.graphrag.model.dto.UpsertResult;
 import com.vividcodes.graphrag.model.graph.AnnotationNode;
 import com.vividcodes.graphrag.model.graph.ClassNode;
 import com.vividcodes.graphrag.model.graph.FieldNode;
@@ -215,39 +217,40 @@ class AnnotationProcessingTest {
         private final java.util.List<AnnotationNode> savedAnnotations = new java.util.ArrayList<>();
         
         @Override
-        public void savePackage(PackageNode packageNode) {
-            // Mock implementation - do nothing
+        public UpsertResult savePackage(PackageNode packageNode) {
+            return UpsertResult.inserted(packageNode.getId(), "Package", 1L, "test-op");
         }
         
         @Override
-        public void saveClass(ClassNode classNode) {
-            // Mock implementation - do nothing
+        public UpsertResult saveClass(ClassNode classNode) {
+            return UpsertResult.inserted(classNode.getId(), "Class", 1L, "test-op");
         }
         
         @Override
-        public void saveMethod(MethodNode methodNode) {
-            // Mock implementation - do nothing
+        public UpsertResult saveMethod(MethodNode methodNode) {
+            return UpsertResult.inserted(methodNode.getId(), "Method", 1L, "test-op");
         }
         
         @Override
-        public void saveField(FieldNode fieldNode) {
-            // Mock implementation - do nothing
+        public UpsertResult saveField(FieldNode fieldNode) {
+            return UpsertResult.inserted(fieldNode.getId(), "Field", 1L, "test-op");
         }
         
         @Override
-        public void saveAnnotation(AnnotationNode annotationNode) {
+        public UpsertResult saveAnnotation(AnnotationNode annotationNode) {
             annotationSaveCount.incrementAndGet();
             savedAnnotations.add(annotationNode);
+            return UpsertResult.inserted(annotationNode.getId(), "Annotation", 1L, "test-op");
         }
         
         @Override
-        public void saveRepository(RepositoryNode repositoryNode) {
-            // Mock implementation - do nothing
+        public UpsertResult saveRepository(RepositoryNode repositoryNode) {
+            return UpsertResult.inserted(repositoryNode.getId(), "Repository", 1L, "test-op");
         }
         
         @Override
-        public void saveSubProject(SubProjectNode subProjectNode) {
-            // Mock implementation - do nothing
+        public UpsertResult saveSubProject(SubProjectNode subProjectNode) {
+            return UpsertResult.inserted(subProjectNode.getId(), "SubProject", 1L, "test-op");
         }
         
         @Override
@@ -266,14 +269,16 @@ class AnnotationProcessingTest {
         }
         
         @Override
-        public void createRelationship(String fromId, String toId, String relationshipType) {
+        public boolean createRelationship(String fromId, String toId, String relationshipType) {
             relationshipCount.incrementAndGet();
+            return true;
         }
         
         @Override
-        public void createRelationship(String fromId, String toId, String relationshipType, 
+        public boolean createRelationship(String fromId, String toId, String relationshipType, 
                                       Map<String, Object> properties) {
             relationshipCount.incrementAndGet();
+            return true;
         }
         
         @Override
@@ -284,6 +289,13 @@ class AnnotationProcessingTest {
         @Override
         public Map<String, Object> getDataStatistics() {
             return Map.of();
+        }
+        
+        @Override
+        public List<UpsertResult> saveBatch(List<Object> nodes) {
+            return nodes.stream()
+                .map(node -> UpsertResult.inserted("test-id", "Test", 1L, "test-op"))
+                .collect(java.util.stream.Collectors.toList());
         }
         
         public int getAnnotationSaveCount() {

@@ -67,13 +67,15 @@ public class RepositoryService {
         repositoryNode.setLastCommitDate(metadata.getCommitDate());
         
         // Save to graph database
-        graphService.saveRepository(repositoryNode);
+        var repositoryResult = graphService.saveRepository(repositoryNode);
         
         // Cache the repository node
         repositoryCache.put(cacheKey, repositoryNode);
         
-        LOGGER.info("Created repository node: {} (org: {}, branch: {})", 
-                   repositoryNode.getName(), repositoryNode.getOrganization(), repositoryNode.getDefaultBranch());
+        LOGGER.info("Repository node {}: {} (org: {}, branch: {}) - {}", 
+                   repositoryResult.getOperationType().name().toLowerCase(),
+                   repositoryNode.getName(), repositoryNode.getOrganization(), repositoryNode.getDefaultBranch(),
+                   repositoryResult.isSuccess() ? "SUCCESS" : "FAILED");
         
         return repositoryNode;
     }
@@ -102,13 +104,25 @@ public class RepositoryService {
         
         // Save sub-projects to database and create relationships
         for (SubProjectNode subProject : subProjectNodes) {
-            graphService.saveSubProject(subProject);
+            var subProjectResult = graphService.saveSubProject(subProject);
             
             // Create CONTAINS relationship from repository to sub-project
-            graphService.createRelationship(repository.getId(), subProject.getId(), "CONTAINS");
+            boolean relationshipCreated = graphService.createRelationship(repository.getId(), subProject.getId(), "CONTAINS");
             
-            LOGGER.debug("Created sub-project: {} of type {} in repository {}", 
-                        subProject.getName(), subProject.getType(), repository.getName());
+            // Defensive logging to handle potential null operationType
+            String operationType = "UNKNOWN";
+            if (subProjectResult != null && subProjectResult.getOperationType() != null) {
+                operationType = subProjectResult.getOperationType().name().toLowerCase();
+            } else {
+                LOGGER.warn("UpsertResult has null operationType for subProject: {} - Result: {}", 
+                           subProject.getName(), subProjectResult);
+            }
+            
+            LOGGER.debug("Sub-project node {}: {} of type {} in repository {} - {} (relationship: {})", 
+                        operationType,
+                        subProject.getName(), subProject.getType(), repository.getName(),
+                        subProjectResult != null && subProjectResult.isSuccess() ? "SUCCESS" : "FAILED",
+                        relationshipCreated ? "CREATED" : "EXISTS");
         }
         
         LOGGER.info("Created {} sub-projects for repository: {}", subProjectNodes.size(), repository.getName());
